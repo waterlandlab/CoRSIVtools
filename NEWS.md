@@ -1,3 +1,16 @@
+# CoRSIVtools 0.2.0
+
+* New QC suite, run via `qc_report()` or individually:
+  * `qc_samples()`: per-sample missingness and beta distributions, with outlier samples flagged.
+  * `qc_pca()` and `qc_batch()`: PCA coloured by metadata, and the association of each PC with batch
+    and biological variables.
+  * `qc_cells()` and `estimate_cell_fractions()`: blood cell composition against groups and PCs.
+    Fractions are estimated with EpiDISH (in Suggests) when not supplied; reference CpGs are matched
+    by unambiguous `cg` name only.
+  * `qc_spatc1l()`: probe-level correlation of the CoRSIVs at the two ends of SPATC1L; expected
+    anti-correlated.
+  * `qc_vtrna2()`: bimodality of the VTRNA2-1 CoRSIV; expected bimodal.
+
 # CoRSIVtools 0.1.2
 
 * `define_sets()` now defaults to `background = "none"`: a CoRSIV-only analysis with no

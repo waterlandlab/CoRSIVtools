@@ -1,7 +1,7 @@
 Package: CoRSIVtools
 Type: Package
 Title: CoRSIV-Focused DNA Methylation Analysis
-Version: 0.1.2
+Version: 0.2.0
 Authors@R: c(
     person("Chathura J.", "Gunasekara", email = "cjgunase@mtu.edu",
            role = c("aut", "cre")),
@@ -35,6 +35,7 @@ Imports:
     withr
 Suggests:
     BiocStyle,
+    EpiDISH,
     IlluminaHumanMethylationEPICv2anno.20a1.hg38,
     knitr,
     rmarkdown,
