@@ -4,14 +4,16 @@
 #' [qc_spatc1l()] and [qc_vtrna2()], and summarises each check as `pass`,
 #' `flag` or `skipped`:
 #' - **samples**: flag if any sample is flagged.
-#' - **batch**: flag if any variable in `vars` other than `group` is
-#'   associated with PC1-PC3 at P < 0.001.
+#' - **batch**: flag if any `technical` variable (e.g. chip, array row,
+#'   processing date) is associated with PC1-PC3 at P < 0.001.
 #' - **cells**: flag if any cell fraction differs between groups at P < 0.05;
 #'   skipped without `group` or cell fractions.
 #' - **SPATC1L** / **VTRNA2-1**: as in the individual checks.
 #'
 #' @param se Annotated SummarizedExperiment (from [annotate_probes()]).
-#' @param vars `colData` columns for PCA colouring and batch tests.
+#' @param vars `colData` columns for PCA colouring and PC-association tests.
+#' @param technical Subset of `vars` that are technical batch variables; only
+#'   these can flag the batch check. Default: all of `vars` except `group`.
 #' @param cells Cell-fraction `colData` columns or a `DataFrame` of fractions;
 #'   if `NULL` and `estimate_cells = TRUE`, estimated with [estimate_cell_fractions()].
 #' @param group `colData` column with the comparison groups (optional).
@@ -25,7 +27,8 @@
 #' sim <- simulate_corsiv_data()
 #' se <- annotate_probes(sim$se, sim$manifest)
 #' qc_report(se, vars = "group", n_top = 500, estimate_cells = FALSE)$summary
-qc_report <- function(se, vars = character(), cells = NULL, group = NULL, pair = NULL, estimate_cells = TRUE,
+qc_report <- function(se, vars = character(), technical = setdiff(vars, group), cells = NULL, group = NULL,
+                      pair = NULL, estimate_cells = TRUE,
                       n_top = 10000, features = c("all", "corsiv")) {
   res <- list()
   row <- function(check, status, metric) data.frame(check = check, status = status, metric = metric)
@@ -37,11 +40,12 @@ qc_report <- function(se, vars = character(), cells = NULL, group = NULL, pair =
   pca_vars <- unique(c(vars, group))
   res$pca <- qc_pca(se, vars = pca_vars, n_top = n_top, features = match.arg(features))
   res$batch <- qc_batch(res$pca, se, pca_vars)
-  tech <- res$batch$table[res$batch$table$variable %in% setdiff(vars, group) &
+  tech <- res$batch$table[res$batch$table$variable %in% technical &
                             res$batch$table$pc %in% c("PC1", "PC2", "PC3") & !is.na(res$batch$table$p), ]
-  top <- res$batch$table[which.min(res$batch$table$p), ]
+  top <- if (nrow(tech)) tech[which.min(tech$p), ] else res$batch$table[which.min(res$batch$table$p), ]
   s2 <- row("batch", if (any(tech$p < 0.001)) "flag" else "pass",
-            sprintf("strongest: %s ~ %s (P = %.2g)", top$pc, top$variable, top$p))
+            sprintf("strongest %s: %s ~ %s (P = %.2g)", if (nrow(tech)) "technical" else "overall",
+                    top$pc, top$variable, top$p))
 
   if (is.null(cells) && estimate_cells && .pkg_available("EpiDISH")) {
     cells <- tryCatch(estimate_cell_fractions(se), error = function(e) NULL)

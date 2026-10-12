@@ -16,3 +16,11 @@ test_that("qc_report skips cell QC without a group", {
   r <- qc_report(s$a, vars = "chip", n_top = 300, estimate_cells = FALSE)
   expect_identical(r$summary$status[r$summary$check == "cells"], "skipped")
 })
+
+test_that("qc_report flags batch only for the technical variables named", {
+  s <- sim_with_chip(shift = 0.1)
+  r <- qc_report(s$a, vars = c("chip", "age"), technical = "age", n_top = 300, estimate_cells = FALSE)
+  expect_identical(r$summary$status[r$summary$check == "batch"], "pass")
+  r2 <- qc_report(s$a, vars = c("chip", "age"), technical = "chip", n_top = 300, estimate_cells = FALSE)
+  expect_identical(r2$summary$status[r2$summary$check == "batch"], "flag")
+})

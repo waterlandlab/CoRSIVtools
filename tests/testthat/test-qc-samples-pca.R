@@ -50,3 +50,21 @@ test_that("qc_pca can restrict to CoRSIV CpGs", {
   expect_identical(p$features, "corsiv")
   expect_error(qc_pca(s$a, vars = "nope"), "nope")
 })
+
+test_that("qc_pca uses autosomes only by default, so sex-chromosome CpGs do not dominate", {
+  n <- 20; sex <- rep(c("F", "M"), each = n / 2)
+  auto <- withr::with_seed(7, matrix(stats::runif(300 * n, 0.2, 0.8), 300, n))
+  chip <- rep(c("c1", "c2"), times = n / 2)
+  auto[, chip == "c2"] <- auto[, chip == "c2"] + 0.1
+  x <- matrix(rep(ifelse(sex == "F", 0.5, 0.05), each = 200), 200, n) +
+       withr::with_seed(8, matrix(stats::rnorm(200 * n, 0, 0.01), 200, n))
+  se <- make_qc_se(c(rep("chr1", 300), rep("chrX", 200)), c(seq_len(300) * 100, seq_len(200) * 100),
+                   pmin(pmax(rbind(auto, x), 0.01), 0.99), coldata = data.frame(sex = sex, chip = chip))
+  p <- qc_pca(se, vars = c("sex", "chip"), n_top = 500)
+  bt <- qc_batch(p, se, c("sex", "chip"))$table
+  expect_identical(p$n_cpgs_used, 300L)
+  expect_lt(bt$p[bt$pc == "PC1" & bt$variable == "chip"], 1e-6)
+  p_all <- qc_pca(se, vars = "sex", n_top = 500, autosomes = FALSE)
+  bt_all <- qc_batch(p_all, se, "sex")$table
+  expect_lt(bt_all$p[bt_all$pc == "PC1" & bt_all$variable == "sex"], 1e-6)
+})

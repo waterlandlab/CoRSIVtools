@@ -1,3 +1,10 @@
+# CoRSIVtools 0.2.1
+
+* `qc_pca()` uses autosomal CpGs only by default (`autosomes = TRUE`). In mixed-sex cohorts,
+  sex-chromosome CpGs otherwise dominate PC1 and hide batch effects.
+* `qc_report()` gains `technical`: only these variables (e.g. chip, row, processing date) can flag
+  the batch check. Biological variables such as sex or age no longer raise a batch flag.
+
 # CoRSIVtools 0.2.0
 
 * New QC suite, run via `qc_report()` or individually:

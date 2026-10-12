@@ -9,6 +9,8 @@
 #' @param features `"all"` (all array CpGs, default) or `"corsiv"` (CpGs in `corsivs` only).
 #' @param n_pcs Number of PCs returned.
 #' @param corsivs CoRSIV `GRanges` used when `features = "corsiv"`.
+#' @param autosomes Use autosomal CpGs only (default). Sex-chromosome CpGs
+#'   otherwise dominate the leading PC in mixed-sex cohorts and hide batch effects.
 #' @return List: `scores` (`DataFrame`: sample, PCs, `vars`), `var_explained`,
 #'   `plots` (per variable: `pc12`, `pc34`), `n_cpgs_used`, `n_dropped_na`, `features`.
 #' @export
@@ -18,11 +20,14 @@
 #' p <- qc_pca(se, vars = c("group", "age"), n_top = 500)
 #' p$plots$group$pc12
 qc_pca <- function(se, vars = character(), n_top = 10000, features = c("all", "corsiv"), n_pcs = 10,
-                   corsivs = corsiv_regions()) {
+                   corsivs = corsiv_regions(), autosomes = TRUE) {
   features <- match.arg(features)
   b <- .qc_beta(se)
   .check_vars(se, vars)
-  if (features == "corsiv") b <- b[overlapsAny(rowRanges(se), corsivs), , drop = FALSE]
+  keep <- rep(TRUE, nrow(b))
+  if (autosomes) keep <- keep & .chr_type(as.character(seqnames(rowRanges(se)))) == "autosome"
+  if (features == "corsiv") keep <- keep & overlapsAny(rowRanges(se), corsivs)
+  b <- b[keep, , drop = FALSE]
   complete <- rowSums(is.na(b)) == 0
   n_dropped <- sum(!complete)
   M <- .to_m(b[complete, , drop = FALSE])
@@ -49,7 +54,7 @@ qc_pca <- function(se, vars = character(), n_top = 10000, features = c("all", "c
   }
   plots <- stats::setNames(lapply(vars, function(v) list(pc12 = plot_pair(v, 1, 2), pc34 = plot_pair(v, 3, 4))), vars)
   list(scores = DataFrame(scores, check.names = FALSE), var_explained = ve, plots = plots,
-       n_cpgs_used = length(top), n_dropped_na = as.integer(n_dropped), features = features)
+       n_cpgs_used = length(top), n_dropped_na = as.integer(n_dropped), features = features, autosomes = autosomes)
 }
 
 #' Association of principal components with sample variables (batch QC)
