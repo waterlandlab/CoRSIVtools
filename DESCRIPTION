@@ -1,0 +1,48 @@
+Package: CoRSIVtools
+Type: Package
+Title: CoRSIV-Focused DNA Methylation Analysis
+Version: 0.1.0
+Authors@R: c(
+    person("Chathura J.", "Gunasekara", email = "cjgunase@mtu.edu",
+           role = c("aut", "cre")),
+    person("Baylor College of Medicine", role = "cph"))
+Description: Restricts DNA methylation array analysis to correlated regions
+    of systemic interindividual variation (CoRSIVs). It maps array probes to
+    CoRSIVs for any array given a probe manifest, summarises methylation per
+    CoRSIV, tests differential methylation with limma under arbitrary
+    covariate designs, and compares CoRSIV results against matched random
+    control regions, the rest of the array, or user-supplied control regions.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 4.5.0)
+Imports:
+    BiocGenerics,
+    Biostrings,
+    BSgenome.Hsapiens.UCSC.hg38,
+    GenomeInfoDb,
+    GenomicRanges,
+    ggplot2,
+    IRanges,
+    limma,
+    methods,
+    S4Vectors,
+    stats,
+    SummarizedExperiment,
+    tools,
+    utils,
+    withr
+Suggests:
+    BiocStyle,
+    IlluminaHumanMethylationEPICanno.ilm10b5.hg38,
+    IlluminaHumanMethylationEPICv2anno.20a1.hg38,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+biocViews: DNAMethylation, MethylationArray, DifferentialMethylation,
+    Epigenetics, Software
+URL: https://github.com/waterlandlab/CoRSIVtools
+BugReports: https://github.com/waterlandlab/CoRSIVtools/issues
