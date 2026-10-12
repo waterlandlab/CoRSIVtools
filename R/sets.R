@@ -50,7 +50,8 @@ setMethod("show", "CoRSIVSets", function(object) {
 #'
 #' @param se Output of [annotate_probes()].
 #' @param corsivs `GRanges` of CoRSIVs; default [corsiv_regions()].
-#' @param background `"matched"` (random control regions matched on width,
+#' @param background `"none"` (default: CoRSIVs only, no background), `"matched"`
+#'   (random control regions matched on width,
 #'   probe count, chromosome type and CpG density), `"array"` (every CpG
 #'   outside CoRSIVs +/- `flank` on the chromosome types of the targets
 #'   (autosomes by default); CpG level only), or a `GRanges` of user control
@@ -70,7 +71,7 @@ setMethod("show", "CoRSIVSets", function(object) {
 #' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
 #' sets
 #' targetRegions(sets)
-define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", n_draws = 100,
+define_sets <- function(se, corsivs = corsiv_regions(), background = "none", n_draws = 100,
                         seed = 1, flank = 1000, min_cpgs = 3, max_tries = 1000) {
   .check_annotated(se)
   cpg <- rowRanges(se)
@@ -89,7 +90,12 @@ define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", 
   mcols(target) <- mcols(target)[, .std_cols]
   excl <- reduce(granges(corsivs) + flank)
   diag <- DataFrame()
-  if (is(background, "GRanges")) {
+  if (identical(background, "none")) {
+    bg <- GRanges()
+    mcols(bg) <- DataFrame(region_id = character(), source_corsivs = character(), n_cpg = integer(),
+                           set = character(), draw = integer())
+    mode <- "none"
+  } else if (is(background, "GRanges")) {
     if (any(overlapsAny(background, corsivs))) {
       stop("user background regions overlap CoRSIVs; remove the overlapping regions first", call. = FALSE)
     }
@@ -114,12 +120,13 @@ define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", 
     bg <- m$background; diag <- m$diagnostics
     mode <- "matched"
   } else {
-    stop("background must be 'matched', 'array', or a GRanges of control regions", call. = FALSE)
+    stop("background must be 'none', 'matched', 'array', or a GRanges of control regions", call. = FALSE)
   }
   new("CoRSIVSets", target = target, background = bg, corsivs = corsivs, mode = mode,
       params = list(corsiv_version = if (is.null(metadata(corsivs)$corsiv_version)) NA_character_
                                      else metadata(corsivs)$corsiv_version,
-                    min_cpgs = min_cpgs, n_draws = if (mode == "matched") n_draws else 1L,
+                    min_cpgs = min_cpgs,
+                    n_draws = switch(mode, matched = as.integer(n_draws), none = 0L, 1L),
                     seed = seed, flank = flank, max_tries = max_tries),
       diagnostics = diag)
 }

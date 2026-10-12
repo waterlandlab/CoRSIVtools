@@ -1,3 +1,10 @@
+# CoRSIVtools 0.1.2
+
+* `define_sets()` now defaults to `background = "none"`: a CoRSIV-only analysis with no
+  background sampling (and no BSgenome use). Pass `background = "matched"`, `"array"` or a
+  `GRanges` to compare against a background. Calls that relied on the old default
+  (`"matched"`) must now request it explicitly.
+
 # CoRSIVtools 0.1.1
 
 * Bug fix: the bundled CoRSIV 2.0 file stores 1-based, end-inclusive coordinates

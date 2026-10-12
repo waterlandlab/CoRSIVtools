@@ -45,7 +45,7 @@ Requires R ≥ 4.5 and Bioconductor ≥ 3.22. `BSgenome.Hsapiens.UCSC.hg38`, abo
 library(CoRSIVtools)
 se   <- from_matrix(betas, meta, sample_col = "Sample_ID")    # betas: probes x samples
 se   <- annotate_probes(se, read_manifest("EPICv2"))
-sets <- define_sets(se, background = "matched", n_draws = 100, seed = 1)
+sets <- define_sets(se)                                       # CoRSIVs only (default)
 coverage_report(sets)                                         # how many CoRSIVs the array covers
 reg  <- summarise_regions(se, sets)
 res  <- test_dm(reg, design = ~ group + age + sex, coef = "groupCase")

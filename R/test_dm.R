@@ -115,7 +115,7 @@ test_dm <- function(x, design, coef, level = c("corsiv", "cpg"), sets = NULL) {
     list(b = b[i, , drop = FALSE],
          info = data.frame(id = rownames(x)[i], region_id = r$region_id, set = r$set, draw = r$draw,
                            chr = as.character(seqnames(cpg))[i], start = start(cpg)[i],
-                           end = end(cpg)[i], n_cpg = 1L, source_corsivs = r$source_corsivs))
+                           end = end(cpg)[i], n_cpg = rep(1L, length(i)), source_corsivs = r$source_corsivs))
   }
   t <- one(sets@target); g <- one(sets@background)
   list(b = rbind(t$b, g$b), info = rbind(t$info, g$info))
