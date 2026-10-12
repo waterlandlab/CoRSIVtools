@@ -6,6 +6,13 @@
 #' @return Named list of `DataFrame`s: `enrichment`, `per_draw`,
 #'   `distributions`, `qq`, `variability`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+#' cmp <- compare_to_background(res)
+#' cmp$enrichment
 compare_to_background <- function(res, p = 0.05, fdr = 0.05) {
   res <- as.data.frame(res)
   tg <- res[res$set == "target", , drop = FALSE]

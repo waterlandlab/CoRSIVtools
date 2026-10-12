@@ -17,6 +17,10 @@
 #' @param seed Random seed.
 #' @return `list(se, manifest, corsivs, controls, dm_ids)`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data(n_samples = 10, n_corsivs = 20, n_dm = 5)
+#' sim$se
+#' sim$dm_ids
 simulate_corsiv_data <- function(n_samples = 20, n_corsivs = 40, n_dm = 10, shift = 0.15, seed = 1) {
   stopifnot(n_samples %% 2 == 0, n_dm <= n_corsivs, n_corsivs <= 200)
   withr::with_seed(seed, {

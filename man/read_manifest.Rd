@@ -19,3 +19,9 @@ Bioconductor hg38 annotation packages.}
 \description{
 Read a probe manifest as hg38 CpG coordinates
 }
+\examples{
+f <- tempfile(fileext = ".bed")
+writeLines(c("chr21\t30000100\t30000101\tcg00000001",
+             "chr21\t30000200\t30000201\tcg00000002"), f)
+read_manifest(f)
+}

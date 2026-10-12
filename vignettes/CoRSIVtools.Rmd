@@ -1,0 +1,78 @@
+---
+title: "CoRSIV-focused differential methylation with CoRSIVtools"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{CoRSIVtools}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, message = FALSE}
+library(CoRSIVtools)
+```
+
+## Inputs
+
+Real analyses supply a normalised beta matrix, a metadata table with one row per
+array sample, and an hg38 probe manifest (BED or Illumina CSV, or `"EPICv1"` /
+`"EPICv2"`). For EPIC-Xtra, request the manifest from the vendor. Here we use
+simulated data on real chr21 sequence.
+
+```{r data}
+sim <- simulate_corsiv_data(n_samples = 20, n_corsivs = 40, n_dm = 10)
+se  <- sim$se                                   # from_matrix(betas, meta, "sample_id")
+se  <- annotate_probes(se, sim$manifest)        # read_manifest("path/to/manifest.bed")
+```
+
+## Target CoRSIVs and a matched background
+
+```{r sets}
+sets <- define_sets(se, corsivs = sim$corsivs, background = "matched", n_draws = 20, seed = 1)
+sets
+coverage_report(sets)
+```
+
+On this small 4-Mb simulation a few CpG-island-dense CoRSIVs have no comparable
+control locus, so they are left unmatched and the warning above is expected;
+`matchDiagnostics(sets)` reports how many targets were matched in each draw.
+
+`background = "array"` uses every CpG outside the CoRSIVs (CpG level only);
+a `GRanges` uses your own control regions.
+
+## CoRSIV-level test
+
+```{r test}
+reg <- summarise_regions(se, sets)
+res <- test_dm(reg, design = ~ group + age, coef = "groupB")
+head(res[res$set == "target", ][order(res$P[res$set == "target"]), ])
+```
+
+## Compare with the background
+
+```{r compare}
+cmp <- compare_to_background(res)
+cmp$enrichment
+cmp$variability
+```
+
+## Plots
+
+```{r plots, fig.width = 9, fig.height = 5}
+plot_volcano(res)
+plot_background(cmp, "enrichment")
+plot_corsiv(reg, sim$dm_ids[1], "group")
+```
+
+## Exporting for bedtools
+
+```{r bed}
+f <- tempfile(fileext = ".bed")
+write_bed(res[res$set == "target", ], f)
+readLines(f, 3)
+```
+
+## Session info
+
+```{r}
+sessionInfo()
+```

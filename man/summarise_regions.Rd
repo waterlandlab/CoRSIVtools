@@ -21,3 +21,10 @@ Region-level \code{RangedSummarizedExperiment}.
 \description{
 Summarise CpG methylation per region (CoRSIV and background)
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+reg <- summarise_regions(se, sets)
+reg
+}

@@ -15,6 +15,16 @@ setClass("CoRSIVSets", representation(target = "GRanges", background = "GRanges"
 
 #' @rdname CoRSIVSets-class
 #' @param x A `CoRSIVSets` object.
+#' @return `targetRegions()` and `backgroundRegions()` return `GRanges`;
+#'   `matchDiagnostics()` returns a `DataFrame` of per-draw matching
+#'   results; `show()` prints a summary and returns `NULL` invisibly.
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' targetRegions(sets)
+#' backgroundRegions(sets)
+#' matchDiagnostics(sets)
 #' @export
 targetRegions <- function(x) x@target
 #' @rdname CoRSIVSets-class
@@ -51,6 +61,12 @@ setMethod("show", "CoRSIVSets", function(object) {
 #' @param max_tries Maximum candidate proposals per target per draw.
 #' @return A [CoRSIVSets-class] object.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' sets
+#' targetRegions(sets)
 define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", n_draws = 100,
                         seed = 1, flank = 1000, min_cpgs = 3, max_tries = 1000) {
   .check_annotated(se)

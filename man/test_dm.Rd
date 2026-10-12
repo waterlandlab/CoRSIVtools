@@ -27,3 +27,10 @@ Fits limma on M-values separately for the target set and each background
 draw, so target moderation and FDR never depend on the background.
 \code{delta_beta} is the same design fitted on the beta scale.
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+res <- test_dm(summarise_regions(se, sets), ~ group + age, coef = "groupB")
+head(res[res$set == "target", ])
+}

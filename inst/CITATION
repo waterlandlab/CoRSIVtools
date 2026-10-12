@@ -1,0 +1,14 @@
+bibentry(bibtype = "Manual",
+         title = "CoRSIVtools: CoRSIV-Focused DNA Methylation Analysis",
+         author = c(person("Chathura J.", "Gunasekara")),
+         organization = "Baylor College of Medicine",
+         year = "2026", note = "R package version 0.1.0",
+         url = "https://github.com/waterlandlab/CoRSIVtools")
+bibentry(bibtype = "Article",
+         title = "A genomic atlas of systemic interindividual epigenetic variation in humans",
+         author = c(person("Chathura J.", "Gunasekara"), person("others")),
+         journal = "Genome Biology", year = "2019", volume = "20", pages = "105",
+         doi = "10.1186/s13059-019-1708-1",
+         textVersion = paste("Gunasekara CJ, et al. (2019) A genomic atlas of systemic interindividual",
+                             "epigenetic variation in humans. Genome Biology 20:105.",
+                             "doi:10.1186/s13059-019-1708-1. (CoRSIV 2.0 citation forthcoming.)"))

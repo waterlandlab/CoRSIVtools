@@ -1,0 +1,90 @@
+---
+title: "CoRSIVtools statistical methods"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{CoRSIVtools methods}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Probe mapping and replicate probes
+
+Probes are mapped to hg38 CpG positions with a user-supplied or built-in
+manifest. Probes without coordinates are dropped and counted. EPICv2 and
+EPIC-Xtra include replicate probes (suffixes such as `_TC11`, `_BC11`) that
+target the same CpG; they are averaged per sample (ignoring NA) **only when
+their coordinates are identical**. Probes sharing a `cg` base name but mapped to
+different positions are kept separate, because a shared name does not
+guarantee a shared locus.
+
+# CoRSIV definition and summary
+
+CoRSIVs are taken from CoRSIV 2.0 (merged population-specific calls, hg38;
+Gunasekara et al. 2019 for the original atlas). Each CoRSIV is identified by its
+1-based coordinates (`chr:start-end`); the original merged names are retained
+but are not unique and are never used as keys. A CoRSIV is analysed if it
+contains at least `min_cpgs` (default 3) distinct CpGs on the array. For sample
+*j* and CoRSIV *r* with measured CpGs *C_rj*,
+
+$$\bar\beta_{rj} = \frac{1}{|C_{rj}|} \sum_{c \in C_{rj}} \beta_{cj}, \quad |C_{rj}| \ge \texttt{min\_cpgs},$$
+
+and NA otherwise. Regions with more than `max_na_frac` (default 0.2) NA samples
+are removed. Because CpGs within a CoRSIV are, by definition, strongly
+correlated across individuals, the mean is an efficient low-noise summary.
+
+# Differential methylation model
+
+For each region the summary is converted to an M-value,
+$M = \log_2\{\beta/(1-\beta)\}$ with $\beta$ clamped to $[10^{-6}, 1-10^{-6}]$,
+and modelled with a linear model $M_r = X\gamma_r + \varepsilon_r$, where $X$ is
+the user's design (e.g. `~ group + age + sex + cell fractions`). Variances are
+moderated with limma's empirical Bayes (`trend = TRUE` for the mean–variance
+trend, `robust = TRUE` to down-weight hypervariable regions; Smyth 2004;
+Phipson et al. 2016). M-values are used for inference because their variance is
+approximately homogeneous across the methylation range (Du et al. 2010); the
+reported effect size, $\Delta\beta$, is the same design coefficient fitted on
+the beta scale.
+
+**Multiple testing.** Benjamini–Hochberg FDR is computed within the target set
+only (and separately within each background draw). The FDR therefore refers to
+the family of CoRSIV tests, not to the whole array; this is a deliberate
+restriction of the hypothesis family and must be reported as such.
+
+**Assumptions and limitations.** Independent samples (no repeated measures in
+v0.1); approximately normal residuals on the M scale; covariates enter only
+through the design. CoRSIVs are enriched for methylation QTLs, so genotype can
+confound group comparisons — include ancestry PCs where available. chrX
+CoRSIVs are excluded by default because their methylation differs by sex and
+requires sex-stratified models.
+
+# Background comparison
+
+**Matched control regions.** For each of `n_draws` draws (seed `seed + r`),
+each analysed CoRSIV is paired with one random control region that has (1) the
+same width, (2) the same number of array CpGs (±1 when ≥ 10), (3) the same
+chromosome type, and (4) CpG density (CpGs per 100 bp, hg38) within ±20%
+(minimum ±0.25). Controls are proposed by choosing a random array CpG outside
+every CoRSIV ± `flank` bp and placing a window of the target's width at a
+uniformly random offset containing it, then rejection-sampling until all four
+criteria hold (up to `max_tries` proposals); controls within a draw do not
+overlap. This follows the permutation-with-constraints approach of regioneR
+(Gel et al. 2016), adapted to array coverage, which is the dominant determinant
+of measurement precision for region summaries.
+
+**Statistics.** The enrichment statistic is the fraction of regions with
+P < 0.05. The empirical p-value is $(1 + \#\{r : f_r \ge f_{target}\})/(1 + R)$
+over $R$ draws (Phipson & Smyth 2010), reported when $R \ge 20$. Fisher's exact
+test of target versus pooled background is also given and is the primary test
+for `background = "array"` (all non-CoRSIV CpGs). The same empirical procedure
+is applied to the median between-individual SD of beta, which provides a
+data-quality check: CoRSIVs are expected to be more variable between individuals
+than matched control regions.
+
+# References
+
+- Du P, et al. (2010) Comparison of Beta-value and M-value methods for quantifying methylation levels by microarray analysis. *BMC Bioinformatics* 11:587.
+- Gel B, et al. (2016) regioneR: an R/Bioconductor package for the association analysis of genomic regions based on permutation tests. *Bioinformatics* 32:289–291.
+- Gunasekara CJ, et al. (2019) A genomic atlas of systemic interindividual epigenetic variation in humans. *Genome Biology* 20:105.
+- Phipson B, Smyth GK (2010) Permutation P-values should never be zero. *Stat Appl Genet Mol Biol* 9:39.
+- Phipson B, et al. (2016) Robust hyperparameter estimation protects against hypervariable genes and improves power to detect differential expression. *Ann Appl Stat* 10:946–963.
+- Smyth GK (2004) Linear models and empirical Bayes methods for assessing differential expression in microarray experiments. *Stat Appl Genet Mol Biol* 3:3.

@@ -22,6 +22,11 @@ matchDiagnostics(x)
 
 \item{object}{A \code{CoRSIVSets} object.}
 }
+\value{
+\code{targetRegions()} and \code{backgroundRegions()} return \code{GRanges};
+\code{matchDiagnostics()} returns a \code{DataFrame} of per-draw matching
+results; \code{show()} prints a summary and returns \code{NULL} invisibly.
+}
 \description{
 Created by \code{\link[=define_sets]{define_sets()}}. Use \code{\link[=targetRegions]{targetRegions()}}, \code{\link[=backgroundRegions]{backgroundRegions()}}
 and \code{\link[=matchDiagnostics]{matchDiagnostics()}} to access the contents.
@@ -38,3 +43,11 @@ and \code{\link[=matchDiagnostics]{matchDiagnostics()}} to access the contents.
 \item{\code{diagnostics}}{\code{DataFrame} of per-draw matching results.}
 }}
 
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+targetRegions(sets)
+backgroundRegions(sets)
+matchDiagnostics(sets)
+}

@@ -18,3 +18,8 @@ columns \code{chr}, \code{start}, \code{end}, \code{id} (1-based, as returned by
 \description{
 Write regions or results as a 0-based BED file for bedtools
 }
+\examples{
+f <- tempfile(fileext = ".bed")
+write_bed(head(corsiv_regions()), f)
+readLines(f, 2)
+}

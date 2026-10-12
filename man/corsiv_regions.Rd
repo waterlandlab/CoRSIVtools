@@ -19,3 +19,7 @@ sex-stratified models, not supported in v0.1).}
 \description{
 CoRSIV regions bundled with the package
 }
+\examples{
+cr <- corsiv_regions()
+head(cr)
+}

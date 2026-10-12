@@ -19,3 +19,8 @@ Probes without coordinates are dropped. Replicate probes at the same
 chr:pos are averaged (NA-aware). Probes that share a cg base name but map
 to different positions are kept separate.
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+se
+}

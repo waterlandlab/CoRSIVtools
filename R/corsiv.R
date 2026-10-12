@@ -8,6 +8,9 @@
 #' @return `GRanges` (1-based) with `region_id` (`chr:start-end`) and
 #'   `source_corsivs` (original merged CoRSIV names, not unique).
 #' @export
+#' @examples
+#' cr <- corsiv_regions()
+#' head(cr)
 corsiv_regions <- function(version = "2.0", chrX = FALSE) {
   if (!version %in% names(.corsiv_files)) {
     stop("unknown CoRSIV version '", version, "'; available: ",
@@ -37,6 +40,10 @@ corsiv_regions <- function(version = "2.0", chrX = FALSE) {
 #' @param file Output path.
 #' @return `file`, invisibly.
 #' @export
+#' @examples
+#' f <- tempfile(fileext = ".bed")
+#' write_bed(head(corsiv_regions()), f)
+#' readLines(f, 2)
 write_bed <- function(x, file) {
   if (is(x, "GRanges")) {
     nm <- if (!is.null(x$region_id)) x$region_id else .region_id(x)

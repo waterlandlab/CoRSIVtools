@@ -37,3 +37,8 @@ between-individual variation (SD 0.10) vs other clusters (SD 0.03).
 between clusters. One CpG carries a same-position replicate probe and one
 probe ID shares its cg base name with a probe elsewhere.
 }
+\examples{
+sim <- simulate_corsiv_data(n_samples = 10, n_corsivs = 20, n_dm = 5)
+sim$se
+sim$dm_ids
+}

@@ -24,3 +24,10 @@ largest P with FDR < \code{fdr}.}
 \description{
 Volcano plot of CoRSIV results
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+plot_volcano(res)
+}

@@ -16,3 +16,9 @@ background (pooled across draws).
 \description{
 How many CoRSIVs (and background regions) the array covers
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+coverage_report(sets)
+}

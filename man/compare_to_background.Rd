@@ -20,3 +20,11 @@ Named list of \code{DataFrame}s: \code{enrichment}, \code{per_draw},
 \description{
 Compare CoRSIV results with the background
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+cmp <- compare_to_background(res)
+cmp$enrichment
+}

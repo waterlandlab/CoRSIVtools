@@ -19,3 +19,9 @@ plot_corsiv(x, id, group)
 \description{
 Beta values of one CoRSIV by group
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+plot_corsiv(summarise_regions(se, sets), sim$dm_ids[1], "group")
+}

@@ -35,6 +35,12 @@
 #'   "background"` and several draws are present, ignored for `"target"`.
 #' @return `ggplot`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+#' plot_manhattan(res)
 plot_manhattan <- function(res, set = "target", fdr = 0.05, draw = NULL) {
   d <- .subset_set(res, set, draw)
   lv <- paste0("chr", c(1:22, "X", "Y"))
@@ -67,6 +73,12 @@ plot_manhattan <- function(res, set = "target", fdr = 0.05, draw = NULL) {
 #' @param delta Optional |delta_beta| reference lines.
 #' @return `ggplot`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+#' plot_volcano(res)
 plot_volcano <- function(res, set = "target", fdr = 0.05, delta = NULL, draw = NULL) {
   d <- .subset_set(res, set, draw)
   d$cls <- ifelse(d$FDR < fdr & d$delta_beta > 0, "hyper",
@@ -95,6 +107,11 @@ plot_volcano <- function(res, set = "target", fdr = 0.05, delta = NULL, draw = N
 #' @param group `colData` column to group by.
 #' @return `ggplot`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' plot_corsiv(summarise_regions(se, sets), sim$dm_ids[1], "group")
 plot_corsiv <- function(x, id, group) {
   i <- which(rowRanges(x)$region_id == id & rowRanges(x)$set == "target")
   if (length(i) != 1L) stop("target region '", id, "' not found in x", call. = FALSE)
@@ -112,6 +129,12 @@ plot_corsiv <- function(x, id, group) {
 #'   (median SD of beta).
 #' @return `ggplot`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+#' plot_background(compare_to_background(res), "variability")
 plot_background <- function(cmp, which = c("enrichment", "variability")) {
   which <- match.arg(which)
   pd <- as.data.frame(cmp$per_draw)

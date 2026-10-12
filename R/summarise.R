@@ -6,6 +6,12 @@
 #' @param max_na_frac Drop regions with more than this fraction of NA samples.
 #' @return Region-level `RangedSummarizedExperiment`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' reg <- summarise_regions(se, sets)
+#' reg
 summarise_regions <- function(se, sets, fun = c("mean", "median"), max_na_frac = 0.2) {
   fun <- match.arg(fun)
   .check_annotated(se)

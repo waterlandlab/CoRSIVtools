@@ -4,6 +4,11 @@
 #' @return `DataFrame`, one row for the supplied CoRSIVs and one for the
 #'   background (pooled across draws).
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' coverage_report(sets)
 coverage_report <- function(sets) {
   stopifnot(is(sets, "CoRSIVSets"))
   row <- function(label, n, kept) {

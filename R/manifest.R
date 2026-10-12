@@ -9,6 +9,11 @@
 #' @param build Genome build of the manifest. Only `"hg38"` is supported.
 #' @return `GRanges` of width 1 with column `probe_id`.
 #' @export
+#' @examples
+#' f <- tempfile(fileext = ".bed")
+#' writeLines(c("chr21\t30000100\t30000101\tcg00000001",
+#'              "chr21\t30000200\t30000201\tcg00000002"), f)
+#' read_manifest(f)
 read_manifest <- function(x, build = "hg38") {
   if (!is.character(x) || length(x) != 1L) stop("x must be a single path or built-in name", call. = FALSE)
   if (!identical(build, "hg38")) {

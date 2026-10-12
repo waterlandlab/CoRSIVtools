@@ -13,6 +13,12 @@
 #' @return `DataFrame`; see the spec for the column schema. Provenance in
 #'   `metadata()`.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+#' res <- test_dm(summarise_regions(se, sets), ~ group + age, coef = "groupB")
+#' head(res[res$set == "target", ])
 test_dm <- function(x, design, coef, level = c("corsiv", "cpg"), sets = NULL) {
   level <- match.arg(level)
   if (level == "corsiv") {

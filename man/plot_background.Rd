@@ -18,3 +18,10 @@ plot_background(cmp, which = c("enrichment", "variability"))
 \description{
 Target vs background distribution across draws
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+res <- test_dm(summarise_regions(se, sets), ~ group, coef = "groupB")
+plot_background(compare_to_background(res), "variability")
+}

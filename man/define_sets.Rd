@@ -41,3 +41,10 @@ A \linkS4class{CoRSIVSets} object.
 \description{
 Define target CoRSIVs and the background to compare them with
 }
+\examples{
+sim <- simulate_corsiv_data()
+se <- annotate_probes(sim$se, sim$manifest)
+sets <- define_sets(se, corsivs = sim$corsivs, background = sim$controls)
+sets
+targetRegions(sets)
+}

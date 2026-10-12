@@ -8,6 +8,10 @@
 #' @param manifest Output of [read_manifest()].
 #' @return A `RangedSummarizedExperiment`, one row per CpG coordinate.
 #' @export
+#' @examples
+#' sim <- simulate_corsiv_data()
+#' se <- annotate_probes(sim$se, sim$manifest)
+#' se
 annotate_probes <- function(se, manifest) {
   if (!is(se, "SummarizedExperiment")) stop("se must be a SummarizedExperiment", call. = FALSE)
   if (!is(manifest, "GRanges") || is.null(manifest$probe_id)) {
