@@ -1,0 +1,11 @@
+.Rproj.user/
+.Rhistory
+.RData
+.DS_Store
+__pycache__/
+.superpowers/
+~$*
+docs/*.html
+inst/doc
+*.tar.gz
+*.Rcheck/
