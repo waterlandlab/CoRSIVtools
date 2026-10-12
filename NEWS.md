@@ -1,3 +1,12 @@
+# CoRSIVtools 0.1.1
+
+* Bug fix: the bundled CoRSIV 2.0 file stores 1-based, end-inclusive coordinates
+  (whole 100-bp bins), but `corsiv_regions()` read it as 0-based BED and added 1 to
+  every start. Each CoRSIV lost its first base (e.g. chr13:110812302-110814100
+  instead of chr13:110812301-110814100), and array CpGs on that base were left out
+  (36 CpGs on EPIC-Xtra). `region_id`s change accordingly; re-run analyses made
+  with 0.1.0. `write_bed()` still writes standard 0-based BED.
+
 # CoRSIVtools 0.1.0
 
 * First release: from_matrix(), read_manifest(), annotate_probes(),

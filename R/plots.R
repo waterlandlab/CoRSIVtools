@@ -103,7 +103,7 @@ plot_volcano <- function(res, set = "target", fdr = 0.05, delta = NULL, draw = N
 
 #' Beta values of one CoRSIV by group
 #' @param x Region-level SE from [summarise_regions()].
-#' @param id Target `region_id`, e.g. `"chr1:629002-635000"`.
+#' @param id Target `region_id`, e.g. `"chr1:629001-635000"`.
 #' @param group `colData` column to group by.
 #' @return `ggplot`.
 #' @export

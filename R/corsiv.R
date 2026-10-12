@@ -26,7 +26,9 @@ corsiv_regions <- function(version = "2.0", chrX = FALSE) {
 .read_region_bed <- function(path) {
   b <- utils::read.delim(path, header = FALSE, quote = "", comment.char = "",
                          colClasses = c("character", "integer", "integer", "character"))
-  gr <- GRanges(b[[1]], IRanges(b[[2]] + 1L, b[[3]]))
+  # The CoRSIV 2.0 file stores 1-based, end-inclusive coordinates (100-bp bins xx01-xx00),
+  # not standard 0-based BED, so the start column is used as is.
+  gr <- GRanges(b[[1]], IRanges(b[[2]], b[[3]]))
   gr$region_id <- .region_id(gr)
   gr$source_corsivs <- b[[4]]
   gr <- GenomeInfoDb::sortSeqlevels(gr)

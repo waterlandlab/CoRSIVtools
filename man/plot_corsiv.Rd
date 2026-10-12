@@ -9,7 +9,7 @@ plot_corsiv(x, id, group)
 \arguments{
 \item{x}{Region-level SE from \code{\link[=summarise_regions]{summarise_regions()}}.}
 
-\item{id}{Target \code{region_id}, e.g. \code{"chr1:629002-635000"}.}
+\item{id}{Target \code{region_id}, e.g. \code{"chr1:629001-635000"}.}
 
 \item{group}{\code{colData} column to group by.}
 }
