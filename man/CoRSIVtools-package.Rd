@@ -11,6 +11,7 @@ Restricts DNA methylation array analysis to correlated regions of systemic inter
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://waterlandlab.github.io/CoRSIVtools/}
   \item \url{https://github.com/waterlandlab/CoRSIVtools}
   \item Report bugs at \url{https://github.com/waterlandlab/CoRSIVtools/issues}
 }

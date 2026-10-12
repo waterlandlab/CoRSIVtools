@@ -15,8 +15,10 @@ src <- args[1]
 stopifnot(unname(tools::md5sum(src)) == "ca1b9a6c50e78e9a43a92f2e56400fb2")
 b <- utils::read.delim(src, header = FALSE, quote = "", comment.char = "",
                        colClasses = c("character", "integer", "integer", "character"))
-gr <- GenomicRanges::GRanges(b[[1]], IRanges::IRanges(b[[2]] + 1L, b[[3]]))
+# The file stores 1-based, end-inclusive coordinates (whole 100-bp bins xx01-xx00), not 0-based BED.
+gr <- GenomicRanges::GRanges(b[[1]], IRanges::IRanges(b[[2]], b[[3]]))
 stopifnot(nrow(b) == 6669L,
           !any(GenomicRanges::countOverlaps(gr, gr, maxgap = 0L) > 1L),
-          !anyDuplicated(sprintf("%s:%d-%d", b[[1]], b[[2]] + 1L, b[[3]])))
+          all((b[[3]] - b[[2]] + 1L) %% 100L == 0L),
+          !anyDuplicated(sprintf("%s:%d-%d", b[[1]], b[[2]], b[[3]])))
 file.copy(src, "inst/extdata/CoRSIV2.0_hg38.bed", overwrite = TRUE)

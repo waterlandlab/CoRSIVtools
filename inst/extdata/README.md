@@ -1,7 +1,11 @@
 # CoRSIV2.0_hg38.bed
 
 - Contents: CoRSIV 2.0 regions (autosomes + chrX; ESS; male and female), hg38,
-  0-based BED, 4 columns (`chr, start, end, source_corsivs`). Overlapping
+  4 tab-separated columns (`chr, start, end, source_corsivs`). **Coordinates are
+  1-based and end-inclusive, not standard 0-based BED**: every region is a whole
+  number of 100-bp bins (starts end in `01`, ends in `00`; e.g. chr13
+  110812301-110814100 is 18 bins). `corsiv_regions()` reads them as such, and
+  `write_bed()` exports standard 0-based BED for bedtools. Overlapping
   population-specific CoRSIVs were merged, apparently with `bedtools merge`
   (inferred from the original file name and the comma-separated, merged name
   column); the name column lists every merged source CoRSIV. The exact upstream
