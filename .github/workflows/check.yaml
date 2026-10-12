@@ -1,0 +1,36 @@
+# One fast job: R CMD check (tests, no vignette rebuild) + BiocCheck.
+# Bioconductor's container installs packages as prebuilt binaries; the R library is cached.
+# Vignettes are rebuilt by the pkgdown workflow on main.
+name: check
+on:
+  push: {branches: [main]}
+  pull_request: {branches: [main]}
+  workflow_dispatch:
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:RELEASE_3_22
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache R library
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/R/site-library
+          key: rlib-bioc3.22-${{ hashFiles('DESCRIPTION') }}
+          restore-keys: rlib-bioc3.22-
+      - name: Install dependencies (hard deps + check tools only)
+        run: |
+          Rscript -e 'BiocManager::install(c("remotes", "rcmdcheck", "BiocCheck", "testthat"), update = FALSE, ask = FALSE)' \
+                  -e 'remotes::install_deps(dependencies = "hard", upgrade = "never", repos = BiocManager::repositories())'
+      - name: R CMD check
+        env:
+          _R_CHECK_FORCE_SUGGESTS_: "false"
+        run: |
+          Rscript -e 'rcmdcheck::rcmdcheck(args = c("--no-manual", "--ignore-vignettes"), build_args = c("--no-build-vignettes", "--no-manual"), error_on = "warning", check_dir = "check")'
+      - name: BiocCheck
+        run: |
+          Rscript -e 'BiocCheck::BiocCheck(".", `quit-with-status` = TRUE, `no-check-bioc-help` = TRUE, `no-check-vignettes` = TRUE)'

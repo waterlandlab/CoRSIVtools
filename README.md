@@ -1,8 +1,7 @@
 # CoRSIVtools
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/R-CMD-check.yaml)
-[![BiocCheck](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/BiocCheck.yaml/badge.svg)](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/BiocCheck.yaml)
+[![check](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/check.yaml/badge.svg)](https://github.com/waterlandlab/CoRSIVtools/actions/workflows/check.yaml)
 <!-- badges: end -->
 
 DNA methylation analysis restricted to **CoRSIVs** (correlated regions of
