@@ -1,0 +1,10 @@
+^docs$
+^\.github$
+^LICENSE\.md$
+^README\.Rmd$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.superpowers$
+^_pkgdown\.yml$
+^pkgdown-site$
+^pkgdown$

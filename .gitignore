@@ -9,3 +9,4 @@ docs/*.html
 inst/doc
 *.tar.gz
 *.Rcheck/
+pkgdown-site/

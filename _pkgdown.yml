@@ -1,0 +1,43 @@
+url: https://waterlandlab.github.io/CoRSIVtools/
+destination: pkgdown-site
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+
+articles:
+  - title: Guides
+    navbar: ~
+    contents:
+      - CoRSIVtools
+      - methods
+
+reference:
+  - title: Input and annotation
+    desc: Build a SummarizedExperiment from normalised betas and map probes to hg38.
+    contents:
+      - from_matrix
+      - read_manifest
+      - annotate_probes
+  - title: CoRSIVs and backgrounds
+    desc: The bundled CoRSIV 2.0 regions, target/background sets and array coverage.
+    contents:
+      - corsiv_regions
+      - define_sets
+      - CoRSIVSets-class
+      - coverage_report
+      - write_bed
+  - title: Analysis
+    contents:
+      - summarise_regions
+      - test_dm
+      - compare_to_background
+  - title: Plots
+    contents:
+      - starts_with("plot_")
+  - title: Example data
+    contents:
+      - simulate_corsiv_data
