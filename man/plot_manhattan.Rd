@@ -4,7 +4,7 @@
 \alias{plot_manhattan}
 \title{Manhattan plot of CoRSIV results}
 \usage{
-plot_manhattan(res, set = "target", fdr = 0.05)
+plot_manhattan(res, set = "target", fdr = 0.05, draw = NULL)
 }
 \arguments{
 \item{res}{Output of \code{\link[=test_dm]{test_dm()}}.}
@@ -13,6 +13,8 @@ plot_manhattan(res, set = "target", fdr = 0.05)
 
 \item{fdr}{FDR threshold; significant points in red, dashed line at the
 largest P with FDR < \code{fdr}.}
+
+\item{draw}{Background draw to plot (integer); required when \code{set = "background"} and several draws are present, ignored for \code{"target"}.}
 }
 \value{
 \code{ggplot}.

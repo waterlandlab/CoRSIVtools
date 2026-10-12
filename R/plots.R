@@ -8,9 +8,21 @@
                    legend.text = ggplot2::element_text(size = 11))
 }
 
-.subset_set <- function(res, set) {
+.subset_set <- function(res, set, draw = NULL) {
   d <- as.data.frame(res); d <- d[d$set == set & !is.na(d$P), , drop = FALSE]
   if (!nrow(d)) stop("no rows with set == '", set, "'", call. = FALSE)
+  if (set == "background") {
+    nd <- length(unique(d$draw))
+    if (is.null(draw) && nd > 1L) {
+      stop("`res` has ", nd, " background draws; pass `draw = <n>` to choose one.",
+           call. = FALSE)
+    }
+    if (!is.null(draw)) {
+      d <- d[!is.na(d$draw) & d$draw %in% draw, , drop = FALSE]
+      if (!nrow(d)) stop("no background rows with draw == ", paste(draw, collapse = ", "),
+                         "; check `draw`.", call. = FALSE)
+    }
+  }
   d
 }
 
@@ -19,10 +31,12 @@
 #' @param set `"target"` or `"background"`.
 #' @param fdr FDR threshold; significant points in red, dashed line at the
 #'   largest P with FDR < `fdr`.
+#' @param draw Background draw to plot (integer); required when `set =
+#'   "background"` and several draws are present, ignored for `"target"`.
 #' @return `ggplot`.
 #' @export
-plot_manhattan <- function(res, set = "target", fdr = 0.05) {
-  d <- .subset_set(res, set)
+plot_manhattan <- function(res, set = "target", fdr = 0.05, draw = NULL) {
+  d <- .subset_set(res, set, draw)
   lv <- paste0("chr", c(1:22, "X", "Y"))
   d <- d[d$chr %in% lv, , drop = FALSE]
   d$chr <- factor(d$chr, levels = intersect(lv, unique(d$chr)))
@@ -53,8 +67,8 @@ plot_manhattan <- function(res, set = "target", fdr = 0.05) {
 #' @param delta Optional |delta_beta| reference lines.
 #' @return `ggplot`.
 #' @export
-plot_volcano <- function(res, set = "target", fdr = 0.05, delta = NULL) {
-  d <- .subset_set(res, set)
+plot_volcano <- function(res, set = "target", fdr = 0.05, delta = NULL, draw = NULL) {
+  d <- .subset_set(res, set, draw)
   d$cls <- ifelse(d$FDR < fdr & d$delta_beta > 0, "hyper",
                   ifelse(d$FDR < fdr & d$delta_beta < 0, "hypo", "ns"))
   d$cls <- factor(d$cls, levels = c("hyper", "hypo", "ns"))

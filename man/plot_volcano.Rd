@@ -4,7 +4,7 @@
 \alias{plot_volcano}
 \title{Volcano plot of CoRSIV results}
 \usage{
-plot_volcano(res, set = "target", fdr = 0.05, delta = NULL)
+plot_volcano(res, set = "target", fdr = 0.05, delta = NULL, draw = NULL)
 }
 \arguments{
 \item{res}{Output of \code{\link[=test_dm]{test_dm()}}.}
@@ -15,6 +15,8 @@ plot_volcano(res, set = "target", fdr = 0.05, delta = NULL)
 largest P with FDR < \code{fdr}.}
 
 \item{delta}{Optional |delta_beta| reference lines.}
+
+\item{draw}{Background draw to plot (integer); required when \code{set = "background"} and several draws are present, ignored for \code{"target"}.}
 }
 \value{
 \code{ggplot}.
