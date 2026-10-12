@@ -60,6 +60,62 @@ For a runnable example on simulated data, see
 analyses to have independent background draws, their seeds must differ by at
 least `n_draws`.
 
+## Contributing / adding features
+
+`main` is protected. Every change goes through a pull request, which needs the
+`check` CI job to pass (about 5 minutes).
+
+### Where things go
+
+| What you're adding | File(s) |
+|---|---|
+| New function | `R/<topic>.R` with a roxygen `@export` block. Reuse an existing file if the topic fits (`plots.R`, `annotate.R`, `test_dm.R`, `qc_*.R`). |
+| Its tests | `tests/testthat/test-<topic>.R`. Use small simulated data from `simulate_corsiv_data()` or `helper-qc.R`, never real data. |
+| Website reference page | Add the function name to a section of `_pkgdown.yml`. **The website build fails if an exported function is missing.** |
+| New dependency | `DESCRIPTION`. Put heavy or optional packages in **Suggests** and guard them with `.pkg_available()` (see EpiDISH in `qc_cells.R`). |
+| Bundled small data | `inst/extdata/`. Record its source in `inst/extdata/README.md`. |
+| User guide / methods text | `vignettes/CoRSIVtools.Rmd` (usage) or `vignettes/methods.Rmd` (formal methods). |
+| Changelog | `NEWS.md`. Bump `Version:` in `DESCRIPTION`: 0.x.y for fixes, 0.(x+1).0 for features. |
+
+### Workflow
+
+```bash
+git checkout main && git pull
+git checkout -b feat/<short-name>          # e.g. feat/annotate-results
+
+# edit R/, tests/, _pkgdown.yml, NEWS.md, DESCRIPTION
+Rscript -e 'devtools::document()'          # regenerates man/ and NAMESPACE
+Rscript -e 'devtools::test()'              # fast loop
+Rscript -e 'devtools::check()'             # aim for 0 errors / 0 warnings / 0 notes
+
+git add -A && git commit -m "Add <feature>: <why>"
+git push -u origin feat/<short-name>
+gh pr create --fill
+```
+
+`devtools::check()` needs pandoc. If it is not found, set `RSTUDIO_PANDOC` to a
+pandoc directory, e.g. `RSTUDIO_PANDOC=/Applications/quarto/bin/tools/aarch64`
+with Quarto on Apple Silicon.
+
+Once CI passes, merge the PR on GitHub or with `gh pr merge --merge`. Merging to
+`main` redeploys the documentation website automatically.
+
+To use the new version in an analysis project:
+
+```r
+remotes::install_github("waterlandlab/CoRSIVtools")   # or devtools::install("path/to/CoRSIVtools")
+```
+
+### House rules
+
+- **Keep defaults fast.** Expensive steps must be opt-in: background draws,
+  large downloads, many permutations.
+- Functions take and return a `SummarizedExperiment` or a plain `data.frame`,
+  like the existing ones.
+- Plots return ggplot objects in the house palette (see `plots.R`).
+- Never commit participant-level data, including in tests or `inst/extdata`.
+- For a larger feature, write a short design note in `docs/` before coding.
+
 ## Citation
 
 `citation("CoRSIVtools")`. Please also cite the CoRSIV atlas: Gunasekara CJ,
