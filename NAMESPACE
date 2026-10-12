@@ -2,6 +2,7 @@
 
 export(annotate_probes)
 export(backgroundRegions)
+export(compare_to_background)
 export(corsiv_regions)
 export(coverage_report)
 export(define_sets)
