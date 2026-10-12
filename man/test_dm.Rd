@@ -25,7 +25,10 @@ or annotated SE from \code{\link[=annotate_probes]{annotate_probes()}} (\code{le
 \description{
 Fits limma on M-values separately for the target set and each background
 draw, so target moderation and FDR never depend on the background.
-\code{delta_beta} is the same design fitted on the beta scale.
+\code{delta_beta} is the same design fitted on the beta scale. Rows without
+residual degrees of freedom, or whose own missing values leave a design
+column non-estimable, are returned with NA statistics and are excluded
+from the variance prior and the BH family.
 }
 \examples{
 sim <- simulate_corsiv_data()

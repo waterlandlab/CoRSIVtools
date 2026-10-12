@@ -28,22 +28,45 @@ contains at least `min_cpgs` (default 3) distinct CpGs on the array. For sample
 
 $$\bar\beta_{rj} = \frac{1}{|C_{rj}|} \sum_{c \in C_{rj}} \beta_{cj}, \quad |C_{rj}| \ge \texttt{min\_cpgs},$$
 
-and NA otherwise. Regions with more than `max_na_frac` (default 0.2) NA samples
-are removed. Because CpGs within a CoRSIV are, by definition, strongly
-correlated across individuals, the mean is an efficient low-noise summary.
+and NA otherwise: a sample whose number of non-missing CpGs in the region falls
+below `min_cpgs` gets NA for that region. Regions with more than `max_na_frac`
+(default 0.2) NA samples are removed. The mean is used as the regional summary;
+`fun = "median"` is available as a robust alternative (the same per-sample
+`min_cpgs` rule applies).
 
 # Differential methylation model
 
 For each region the summary is converted to an M-value,
 $M = \log_2\{\beta/(1-\beta)\}$ with $\beta$ clamped to $[10^{-6}, 1-10^{-6}]$,
 and modelled with a linear model $M_r = X\gamma_r + \varepsilon_r$, where $X$ is
-the user's design (e.g. `~ group + age + sex + cell fractions`). Variances are
-moderated with limma's empirical Bayes (`trend = TRUE` for the mean–variance
-trend, `robust = TRUE` to down-weight hypervariable regions; Smyth 2004;
-Phipson et al. 2016). M-values are used for inference because their variance is
-approximately homogeneous across the methylation range (Du et al. 2010); the
-reported effect size, $\Delta\beta$, is the same design coefficient fitted on
-the beta scale.
+the user's design (e.g. `~ group + age + sex + cell fractions`). The model is
+fitted with limma (`lmFit` followed by `eBayes` with `trend = TRUE` for the
+mean–variance trend and `robust = TRUE` for robust hyperparameter estimation
+that down-weights hypervariable regions; Smyth 2004; Phipson et al. 2016).
+M-values are used for inference because their variance is approximately
+homogeneous across the methylation range (Du et al. 2010); the reported effect
+size, $\Delta\beta$, is the same design coefficient fitted on the beta scale.
+
+**Blocks.** limma is fitted separately within the target set and within each
+background draw. The variance prior (and its mean–variance trend) and the FDR
+family are therefore block-specific, and target statistics do not depend on the
+background chosen.
+
+**Missing values.** Samples with a missing value in any design variable are
+dropped (and counted); if the remaining samples do not exceed the number of
+design columns, the analysis stops with an error. Within a block, a row is
+reported with NA statistics, and is excluded from the variance prior and from
+the BH family, if (i) its number of non-missing samples does not exceed the
+number of design columns (no residual degrees of freedom), or (ii) its own
+missing values leave some design column non-estimable (for example, every
+sample of one group is missing for that row). The number of rows in case (ii)
+is reported in a message.
+
+**CpG-level analysis.** With `level = "cpg"`, each array CpG inside an analysed
+CoRSIV is modelled separately with the same design and the same procedure. The
+target block contains all target CpGs (FDR over target CpGs); background CpGs
+form one block per background draw, or a single block of all eligible array
+CpGs with `background = "array"`.
 
 **Multiple testing.** Benjamini–Hochberg FDR is computed within the target set
 only (and separately within each background draw). The FDR therefore refers to
@@ -59,26 +82,52 @@ requires sex-stratified models.
 
 # Background comparison
 
-**Matched control regions.** For each of `n_draws` draws (seed `seed + r`),
-each analysed CoRSIV is paired with one random control region that has (1) the
-same width, (2) the same number of array CpGs (±1 when ≥ 10), (3) the same
-chromosome type, and (4) CpG density (CpGs per 100 bp, hg38) within ±20%
-(minimum ±0.25). Controls are proposed by choosing a random array CpG outside
-every CoRSIV ± `flank` bp and placing a window of the target's width at a
-uniformly random offset containing it, then rejection-sampling until all four
-criteria hold (up to `max_tries` proposals); controls within a draw do not
-overlap. This follows the permutation-with-constraints approach of regioneR
-(Gel et al. 2016), adapted to array coverage, which is the dominant determinant
-of measurement precision for region summaries.
+**Matched control regions.** For each of `n_draws` draws, each analysed CoRSIV
+is paired with one random control region that has (1) the same width, (2) the
+same number of array CpGs (exact when the target has fewer than 10, otherwise
+±1), (3) the same chromosome type (autosome or chrX), and (4) CpG density (CpGs
+per 100 bp, hg38) within $\pm\max(0.2d, 0.25)$ of the target's density $d$.
+Controls are proposed by choosing a random array CpG outside every CoRSIV ±
+`flank` bp on a chromosome of the target's type and placing a window of the
+target's width at a uniformly random offset containing it. A proposal is
+rejected if the window extends beyond the chromosome end, if any part of the
+**whole window** lies within a CoRSIV ± `flank`, if it overlaps a control
+already accepted in the same draw, or if it fails criteria (2) or (4);
+proposals are repeated up to `max_tries` times per target per draw. This
+follows the permutation-with-constraints approach of regioneR (Gel et al.
+2016), adapted to array data: matching on probe count keeps the precision of
+regional summaries comparable between targets and controls. Targets for which
+no control is found in a draw are unmatched in that draw but remain in the
+target statistic; `matchDiagnostics()` reports the number unmatched per draw
+(on EPIC-Xtra, about 3.6–3.9% of 3,036 targets per draw, typically CpG-dense
+ones), and a warning is given if more than 5% are unmatched in any draw.
 
-**Statistics.** The enrichment statistic is the fraction of regions with
-P < 0.05. The empirical p-value is $(1 + \#\{r : f_r \ge f_{target}\})/(1 + R)$
-over $R$ draws (Phipson & Smyth 2010), reported when $R \ge 20$. Fisher's exact
-test of target versus pooled background is also given and is the primary test
-for `background = "array"` (all non-CoRSIV CpGs). The same empirical procedure
-is applied to the median between-individual SD of beta, which provides a
-data-quality check: CoRSIVs are expected to be more variable between individuals
-than matched control regions.
+**Seeds.** Draw $r$ ($r = 1, \dots, R$) is generated with random seed
+`seed + r`. Results are reproducible for a given `seed`, but two analyses with
+base seeds closer than `n_draws` share draws (for example, draw 2 of `seed = 1`
+is draw 1 of `seed = 2`). For an independent sensitivity analysis, use base
+seeds that differ by at least `n_draws` (e.g. `seed = 1` and `seed = 1001` with
+100 draws).
+
+**Array background.** With `background = "array"` (CpG level only), the
+background is every array CpG outside all CoRSIVs ± `flank`, restricted to the
+chromosome types of the targets (autosomes by default, so chrX, chrY,
+mitochondrial and unplaced-contig CpGs are excluded). It is a single block
+(one "draw").
+
+**Statistics.** The enrichment statistic for a set is the fraction $f$ of
+tested regions (or CpGs) with $P <$ `p` (default 0.05). For matched draws, the
+empirical p-value is one-sided (target at least as enriched as background),
+$(1 + \#\{r : f_r \ge f_{target}\})/(1 + R)$ over $R$ draws (Phipson & Smyth
+2010), and is reported only when $R \ge 20$; in matched mode this empirical p
+is the primary inference. The same one-sided empirical procedure is applied to
+the median between-individual SD of beta, as a data-quality check: CoRSIVs are
+expected to be more variable between individuals than matched control regions.
+Fisher's exact test (two-sided) of target versus pooled background is also
+reported. It treats all background units as independent, although controls
+from different draws can reuse the same loci and, in `"array"` mode, roughly a
+million spatially correlated CpGs enter the test; it is therefore
+anti-conservative and should be read as descriptive.
 
 # References
 

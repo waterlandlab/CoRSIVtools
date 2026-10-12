@@ -67,6 +67,32 @@ test_that("an all-NA row returns NA statistics instead of erroring", {  # Review
   expect_false(all(is.na(res$P)))
 })
 
+test_that("a row whose own NA pattern makes the design non-estimable is NA and outside the BH family", {
+  r <- setup_sim()
+  a <- r$a
+  tg_rows <- which(IRanges::overlapsAny(rowRanges(a), targetRegions(r$x)))
+  i <- tg_rows[1]
+  assay(a)[i, a$group == "B"] <- NA                    # 10 non-NA samples, but groupB not estimable
+  expect_no_warning(
+    expect_message(res <- test_dm(a, ~ group, "groupB", level = "cpg", sets = r$x),
+                   "1 row\\(s\\) returned as NA")
+  )
+  row <- res[res$id == rownames(a)[i], ]
+  expect_true(all(is.na(unlist(as.data.frame(row)[c("delta_beta", "logFC_M", "AveM", "t", "P", "FDR")]))))
+  tg <- res[res$set == "target", ]
+  ok <- !is.na(tg$P)
+  expect_identical(sum(!ok), 1L)
+  expect_equal(tg$FDR[ok], stats::p.adjust(tg$P[ok], "BH"))
+  expect_false(anyNA(res$P[res$set == "background"]))
+})
+
+test_that("too few complete samples for the design is an error, not all-NA output", {
+  r <- setup_sim()
+  a <- r$a; a$age[-c(1, 2, 11)] <- NA                 # 3 samples left (A, A, B), 3 design columns
+  expect_error(suppressMessages(test_dm(a, ~ group + age, "groupB", level = "cpg", sets = r$x)),
+               "3 samples remain")
+})
+
 test_that("provenance metadata records every setting", {
   r <- setup_sim()
   res <- test_dm(r$a, ~ group, "groupB", level = "cpg", sets = r$x)

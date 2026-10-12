@@ -52,10 +52,13 @@ setMethod("show", "CoRSIVSets", function(object) {
 #' @param corsivs `GRanges` of CoRSIVs; default [corsiv_regions()].
 #' @param background `"matched"` (random control regions matched on width,
 #'   probe count, chromosome type and CpG density), `"array"` (every CpG
-#'   outside CoRSIVs +/- `flank`; CpG level only), or a `GRanges` of
-#'   user control regions (must not overlap CoRSIVs).
+#'   outside CoRSIVs +/- `flank` on the chromosome types of the targets
+#'   (autosomes by default); CpG level only), or a `GRanges` of user control
+#'   regions (must not overlap CoRSIVs).
 #' @param n_draws Number of matched draws.
-#' @param seed Base seed; draw r uses `seed + r`.
+#' @param seed Base seed; draw r uses `seed + r`. Two analyses therefore
+#'   share draws unless their base seeds differ by at least `n_draws` (e.g. for
+#'   a sensitivity analysis with 100 draws use `seed = 1` and `seed = 1001`).
 #' @param flank bp excluded around every CoRSIV when choosing background.
 #' @param min_cpgs Minimum distinct CpGs for a region to be analysed.
 #' @param max_tries Maximum candidate proposals per target per draw.
@@ -101,7 +104,8 @@ define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", 
     bg$set <- rep("background", length(bg)); bg$draw <- rep(1L, length(bg))
     mode <- "user"
   } else if (identical(background, "array")) {
-    bg <- granges(cpg[!overlapsAny(cpg, excl)])
+    tt <- unique(.chr_type(as.character(seqnames(target))))
+    bg <- granges(cpg[!overlapsAny(cpg, excl) & .chr_type(as.character(seqnames(cpg))) %in% tt])
     mcols(bg) <- DataFrame(region_id = .cpg_id(bg), source_corsivs = NA_character_, n_cpg = 1L,
                            set = "background", draw = 1L)
     mode <- "array"

@@ -41,10 +41,17 @@ test_that("every matched control satisfies all four criteria and exclusions", {
   expect_true(all(is.na(bg$source_corsivs)))
 })
 
-test_that("same seed reproduces draws; different seed changes them", {
-  a <- sim_sets(n_draws = 2, seed = 7); b <- sim_sets(n_draws = 2, seed = 7); c <- sim_sets(n_draws = 2, seed = 8)
+test_that("same seed reproduces draws; seeds n_draws apart give different draws", {
+  a <- sim_sets(n_draws = 2, seed = 7); b <- sim_sets(n_draws = 2, seed = 7)
+  c <- sim_sets(n_draws = 2, seed = 107)
   expect_identical(backgroundRegions(a$x)$region_id, backgroundRegions(b$x)$region_id)
   expect_false(identical(backgroundRegions(a$x)$region_id, backgroundRegions(c$x)$region_id))
+})
+
+test_that("draw r uses seed + r, so adjacent base seeds share draws (documented)", {
+  a <- sim_sets(n_draws = 2, seed = 7); d <- sim_sets(n_draws = 2, seed = 8)
+  ga <- backgroundRegions(a$x); gd <- backgroundRegions(d$x)
+  expect_identical(ga$region_id[ga$draw == 2L], gd$region_id[gd$draw == 1L])
 })
 
 test_that("diagnostics report per-draw matching", {

@@ -22,12 +22,15 @@ define_sets(
 
 \item{background}{\code{"matched"} (random control regions matched on width,
 probe count, chromosome type and CpG density), \code{"array"} (every CpG
-outside CoRSIVs +/- \code{flank}; CpG level only), or a \code{GRanges} of
-user control regions (must not overlap CoRSIVs).}
+outside CoRSIVs +/- \code{flank} on the chromosome types of the targets
+(autosomes by default); CpG level only), or a \code{GRanges} of user control
+regions (must not overlap CoRSIVs).}
 
 \item{n_draws}{Number of matched draws.}
 
-\item{seed}{Base seed; draw r uses \code{seed + r}.}
+\item{seed}{Base seed; draw r uses \code{seed + r}. Two analyses therefore
+share draws unless their base seeds differ by at least \code{n_draws} (e.g. for
+a sensitivity analysis with 100 draws use \code{seed = 1} and \code{seed = 1001}).}
 
 \item{flank}{bp excluded around every CoRSIV when choosing background.}
 
