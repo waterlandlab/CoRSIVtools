@@ -7,6 +7,7 @@
 qc_report(
   se,
   vars = character(),
+  technical = setdiff(vars, group),
   cells = NULL,
   group = NULL,
   pair = NULL,
@@ -18,7 +19,10 @@ qc_report(
 \arguments{
 \item{se}{Annotated SummarizedExperiment (from \code{\link[=annotate_probes]{annotate_probes()}}).}
 
-\item{vars}{\code{colData} columns for PCA colouring and batch tests.}
+\item{vars}{\code{colData} columns for PCA colouring and PC-association tests.}
+
+\item{technical}{Subset of \code{vars} that are technical batch variables; only
+these can flag the batch check. Default: all of \code{vars} except \code{group}.}
 
 \item{cells}{Cell-fraction \code{colData} columns or a \code{DataFrame} of fractions;
 if \code{NULL} and \code{estimate_cells = TRUE}, estimated with \code{\link[=estimate_cell_fractions]{estimate_cell_fractions()}}.}
@@ -41,8 +45,8 @@ Runs \code{\link[=qc_samples]{qc_samples()}}, \code{\link[=qc_pca]{qc_pca()}} + 
 \code{flag} or \code{skipped}:
 \itemize{
 \item \strong{samples}: flag if any sample is flagged.
-\item \strong{batch}: flag if any variable in \code{vars} other than \code{group} is
-associated with PC1-PC3 at P < 0.001.
+\item \strong{batch}: flag if any \code{technical} variable (e.g. chip, array row,
+processing date) is associated with PC1-PC3 at P < 0.001.
 \item \strong{cells}: flag if any cell fraction differs between groups at P < 0.05;
 skipped without \code{group} or cell fractions.
 \item \strong{SPATC1L} / \strong{VTRNA2-1}: as in the individual checks.

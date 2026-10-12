@@ -10,7 +10,8 @@ qc_pca(
   n_top = 10000,
   features = c("all", "corsiv"),
   n_pcs = 10,
-  corsivs = corsiv_regions()
+  corsivs = corsiv_regions(),
+  autosomes = TRUE
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ qc_pca(
 \item{n_pcs}{Number of PCs returned.}
 
 \item{corsivs}{CoRSIV \code{GRanges} used when \code{features = "corsiv"}.}
+
+\item{autosomes}{Use autosomal CpGs only (default). Sex-chromosome CpGs
+otherwise dominate the leading PC in mixed-sex cohorts and hide batch effects.}
 }
 \value{
 List: \code{scores} (\code{DataFrame}: sample, PCs, \code{vars}), \code{var_explained},
