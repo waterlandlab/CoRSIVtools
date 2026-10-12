@@ -34,7 +34,7 @@ jobs:
                   -e 'remotes::install_deps(dependencies = "hard", upgrade = "never", repos = BiocManager::repositories())'
           R CMD INSTALL --no-docs --no-multiarch .
       - name: Build site
-        run: Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
+        run: Rscript -e 'pkgdown::build_site_github_pages(dest_dir = "pkgdown-site", new_process = FALSE, install = FALSE)'
       - uses: actions/upload-pages-artifact@v3
         with:
           path: pkgdown-site
