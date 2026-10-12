@@ -43,5 +43,5 @@ Config/testthat/edition: 3
 VignetteBuilder: knitr
 biocViews: DNAMethylation, MethylationArray, DifferentialMethylation,
     Epigenetics, Software
-URL: https://github.com/waterlandlab/CoRSIVtools
+URL: https://waterlandlab.github.io/CoRSIVtools/, https://github.com/waterlandlab/CoRSIVtools
 BugReports: https://github.com/waterlandlab/CoRSIVtools/issues

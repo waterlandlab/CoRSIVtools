@@ -5,3 +5,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.superpowers$
+^_pkgdown\.yml$
+^pkgdown-site$
+^pkgdown$
