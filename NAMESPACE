@@ -3,6 +3,7 @@
 export(annotate_probes)
 export(backgroundRegions)
 export(corsiv_regions)
+export(coverage_report)
 export(define_sets)
 export(from_matrix)
 export(matchDiagnostics)
