@@ -17,7 +17,7 @@ compare_to_background <- function(res, p = 0.05, fdr = 0.05) {
   res <- as.data.frame(res)
   tg <- res[res$set == "target", , drop = FALSE]
   bg <- res[res$set == "background", , drop = FALSE]
-  if (!nrow(bg)) stop("res has no background rows; run define_sets() with a background", call. = FALSE)
+  if (!nrow(bg)) stop("res has no background rows; run define_sets() with background = \"matched\", \"array\" or a GRanges", call. = FALSE)
   per_draw <- do.call(rbind, lapply(split(bg, bg$draw), function(d) data.frame(
     draw = d$draw[1], n = sum(!is.na(d$P)), n_sig = sum(d$P < p, na.rm = TRUE),
     n_fdr = sum(d$FDR < fdr, na.rm = TRUE), median_sd = stats::median(d$sd_beta, na.rm = TRUE))))

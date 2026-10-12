@@ -7,7 +7,7 @@
 define_sets(
   se,
   corsivs = corsiv_regions(),
-  background = "matched",
+  background = "none",
   n_draws = 100,
   seed = 1,
   flank = 1000,
@@ -20,7 +20,8 @@ define_sets(
 
 \item{corsivs}{\code{GRanges} of CoRSIVs; default \code{\link[=corsiv_regions]{corsiv_regions()}}.}
 
-\item{background}{\code{"matched"} (random control regions matched on width,
+\item{background}{\code{"none"} (default: CoRSIVs only, no background), \code{"matched"}
+(random control regions matched on width,
 probe count, chromosome type and CpG density), \code{"array"} (every CpG
 outside CoRSIVs +/- \code{flank} on the chromosome types of the targets
 (autosomes by default); CpG level only), or a \code{GRanges} of user control
