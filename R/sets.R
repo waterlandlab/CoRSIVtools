@@ -57,12 +57,14 @@ define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", 
   cpg <- rowRanges(se)
   if (is.null(corsivs$region_id)) corsivs$region_id <- .region_id(corsivs)
   if (is.null(corsivs$source_corsivs)) corsivs$source_corsivs <- NA_character_
-  # a no-common-seqlevels warning is superseded by the error below
-  corsivs$n_cpg <- suppressWarnings(countOverlaps(corsivs, cpg))
+  chr_msg <- "Check that chromosome names match (e.g. 'chr1' in both the manifest and the CoRSIVs)."
+  if (!length(intersect(GenomeInfoDb::seqlevels(corsivs), GenomeInfoDb::seqlevels(cpg)))) {
+    stop("corsivs and se share no chromosome names. ", chr_msg, call. = FALSE)
+  }
+  corsivs$n_cpg <- countOverlaps(corsivs, cpg)
   target <- corsivs[corsivs$n_cpg >= min_cpgs]
   if (!length(target)) {
-    stop(sprintf(paste0("no CoRSIV has >= %d CpGs on this array. Check that chromosome names match ",
-                        "(e.g. 'chr1' in both the manifest and the CoRSIVs)."), min_cpgs), call. = FALSE)
+    stop(sprintf("no CoRSIV has >= %d CpGs on this array. %s", min_cpgs, chr_msg), call. = FALSE)
   }
   target$set <- "target"; target$draw <- NA_integer_
   mcols(target) <- mcols(target)[, .std_cols]
@@ -74,7 +76,12 @@ define_sets <- function(se, corsivs = corsiv_regions(), background = "matched", 
     }
     bg <- granges(background)
     bg$region_id <- .region_id(bg); bg$source_corsivs <- NA_character_
+    n_supplied <- length(bg)
     bg$n_cpg <- countOverlaps(bg, cpg); bg <- bg[bg$n_cpg >= min_cpgs]
+    if (!length(bg)) {
+      warning(sprintf("none of the %d user background regions has >= %d CpGs on this array; the background is empty",
+                      n_supplied, min_cpgs), call. = FALSE)
+    }
     bg$set <- rep("background", length(bg)); bg$draw <- rep(1L, length(bg))
     mode <- "user"
   } else if (identical(background, "array")) {

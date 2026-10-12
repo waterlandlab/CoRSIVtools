@@ -7,7 +7,9 @@ sim_annot <- function(...) {
 test_that("targets are CoRSIVs with >= min_cpgs CpGs; user background must not overlap", {
   s <- sim_annot()
   user <- GenomicRanges::GRanges("chr21", IRanges::IRanges(c(1e6, 2e6), width = 500))
-  x <- define_sets(s$a, s$corsivs, background = user, min_cpgs = 3)
+  expect_warning(x <- define_sets(s$a, s$corsivs, background = user, min_cpgs = 3),
+                 "none of the 2 user background regions")
+  expect_length(backgroundRegions(x), 0L)
   expect_s4_class(x, "CoRSIVSets")
   expect_identical(x@mode, "user")
   n <- GenomicRanges::countOverlaps(s$corsivs, rowRanges(s$a))
@@ -17,6 +19,18 @@ test_that("targets are CoRSIVs with >= min_cpgs CpGs; user background must not o
   expect_true(all(targetRegions(x)$set == "target"))
   expect_error(define_sets(s$a, s$corsivs, background = s$corsivs[1:2]), "overlap")
   expect_error(define_sets(s$a, s$corsivs, background = "nope"), "background must be")
+})
+
+test_that("a non-empty user background is filtered and standardised", {
+  s <- sim_annot()
+  x <- define_sets(s$a, s$corsivs, background = s$controls, min_cpgs = 3)
+  bg <- backgroundRegions(x)
+  expect_identical(names(mcols(bg)), CoRSIVtools:::.std_cols)
+  expect_true(length(bg) > 0L)
+  expect_true(all(bg$n_cpg >= 3L))
+  expect_true(all(bg$draw == 1L))
+  expect_true(all(bg$set == "background"))
+  expect_identical(length(bg), sum(GenomicRanges::countOverlaps(s$controls, rowRanges(s$a)) >= 3))
 })
 
 test_that("array background is every CpG outside CoRSIVs +/- flank", {
