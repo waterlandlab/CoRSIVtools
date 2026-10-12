@@ -1,0 +1,45 @@
+test_that("estimate_cell_fractions matches reference CpGs by unambiguous cg name only", {
+  skip_if_not_installed("EpiDISH")
+  e <- new.env(); utils::data("cent12CT.m", package = "EpiDISH", envir = e)
+  ref <- e$cent12CT.m
+  n <- 20
+  w <- withr::with_seed(1, {
+    m <- matrix(stats::rgamma(ncol(ref) * n, 1), ncol(ref), n); sweep(m, 2, colSums(m), "/")
+  })
+  b <- ref %*% w + withr::with_seed(2, matrix(stats::rnorm(nrow(ref) * n, 0, 0.01), nrow(ref), n))
+  b <- pmin(pmax(b, 0.001), 0.999)
+  ids <- paste0(rownames(ref), "_TC11")
+  # make the first reference CpG ambiguous: same cg name at a second, different coordinate
+  b2 <- rbind(b, b[1, , drop = FALSE])
+  ids2 <- c(ids, sub("_TC11$", "_TC21", ids[1]))
+  se <- make_qc_se("chr1", seq(1000, by = 1000, length.out = nrow(b2)), b2, ids = ids2)
+  f <- estimate_cell_fractions(se, ref = "cent12CT")
+  expect_s4_class(f, "DataFrame")
+  expect_identical(rownames(f), colnames(se))
+  expect_identical(ncol(f), ncol(ref))
+  expect_equal(unname(rowSums(as.matrix(f))), rep(1, n), tolerance = 1e-6)
+  md <- S4Vectors::metadata(f)
+  expect_identical(md$n_ambiguous, 1L)
+  expect_identical(md$n_matched, nrow(ref) - 1L)
+  expect_gt(stats::cor(as.vector(as.matrix(f)), as.vector(t(w))), 0.9)
+})
+
+test_that("qc_cells tests cell fractions between groups, paired when pairs are given", {
+  s <- sim_with_chip()
+  a <- s$a
+  n <- ncol(a)
+  a$pair <- rep(seq_len(n / 2), 2)
+  a$Neu <- withr::with_seed(3, stats::runif(n, 0.5, 0.7))
+  a$Mono <- a$Neu * 0.1 + ifelse(a$group == "B", 0.05, 0)
+  q <- qc_cells(a, cells = c("Neu", "Mono"), group = "group", pair = "pair")
+  expect_identical(q$table$cell, c("Neu", "Mono"))
+  expect_identical(unique(q$table$test), "paired t-test")
+  expect_lt(q$table$p[q$table$cell == "Mono"], 1e-6)
+  expect_s3_class(q$plot_box, "ggplot")
+  expect_silent(ggplot2::ggplot_build(q$plot_box))
+  p <- qc_pca(a, vars = "group", n_top = 300)
+  q2 <- qc_cells(a, cells = c("Neu", "Mono"), group = "group", pca = p)
+  expect_identical(unique(q2$table$test), "Wilcoxon rank-sum")
+  expect_s3_class(q2$plot_pc, "ggplot")
+  expect_error(qc_cells(a, cells = "nope", group = "group"), "nope")
+})

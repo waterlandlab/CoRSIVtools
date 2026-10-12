@@ -24,6 +24,28 @@ se  <- sim$se                                   # from_matrix(betas, meta, "samp
 se  <- annotate_probes(se, sim$manifest)        # read_manifest("path/to/manifest.bed")
 ```
 
+## Quality control
+
+Run the QC suite before testing. It checks:
+
+- per-sample missingness and beta distributions;
+- PCA, coloured by metadata, with each PC's association with batch and
+  biological variables;
+- blood cell composition by group;
+- two known CoRSIV behaviours:
+  - the CoRSIVs at the two ends of *SPATC1L* should be anti-correlated;
+  - the *VTRNA2-1* CoRSIV should be bimodal.
+
+The simulated data cover only part of chr21, so the two CoRSIV-biology
+checks are skipped here. On real arrays they run automatically.
+
+```{r qc, fig.width = 9, fig.height = 5}
+qc <- qc_report(se, vars = c("group", "age"), group = "group", n_top = 500, estimate_cells = FALSE)
+qc$summary
+qc$results$pca$plots$group$pc12
+qc$results$batch$plot
+```
+
 ## Target CoRSIVs and a matched background
 
 ```{r sets}

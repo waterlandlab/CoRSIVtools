@@ -35,6 +35,17 @@ reference:
       - summarise_regions
       - test_dm
       - compare_to_background
+  - title: Quality control
+    desc: Sample, batch, cell-composition and CoRSIV-biology checks to run before the analysis.
+    contents:
+      - qc_report
+      - qc_samples
+      - qc_pca
+      - qc_batch
+      - qc_cells
+      - estimate_cell_fractions
+      - qc_spatc1l
+      - qc_vtrna2
   - title: Plots
     contents:
       - starts_with("plot_")

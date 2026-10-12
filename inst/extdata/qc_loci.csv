@@ -1,0 +1,4 @@
+locus,region_id,role,expected
+SPATC1L,chr21:46160701-46162600,3' end of SPATC1L (minus strand),anticorrelated
+SPATC1L,chr21:46184001-46185600,5' end (TSS) of SPATC1L,anticorrelated
+VTRNA2-1,chr5:136079901-136081000,overlaps VTRNA2-1,bimodal
