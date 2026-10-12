@@ -2,8 +2,10 @@
 #
 # Upstream generation (Waterland Lab): population-specific CoRSIV 2.0 calls
 # (ESS, autosomes + chrX, male and female) at 100-bp resolution, merged with
-#   bedtools merge -c 4 -o distinct
-# producing CoRSIV2.0_ESS_chrX_male_female_all_cooridnates_100bp_hg38.bedtools_merged_fixed.bed.
+# `bedtools merge` (inferred from the original file name and the comma-separated,
+# merged name column), producing
+# CoRSIV2.0_ESS_chrX_male_female_all_cooridnates_100bp_hg38.bedtools_merged_fixed.bed.
+# The exact upstream merge commands are UNCONFIRMED; the lab will supply them.
 # The upstream calling scripts live in https://github.com/waterlandlab/CoRSIV2.0 (scripts/).
 #
 # This script copies the merged file into the package and validates it.
