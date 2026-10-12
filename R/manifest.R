@@ -5,7 +5,10 @@
 #'
 #' @param x Path to a BED (`chr, start, end, probe_id`; 1-bp, 0-based) or
 #'   Illumina CSV manifest, or one of `"EPICv1"`, `"EPICv2"` for the
-#'   Bioconductor hg38 annotation packages.
+#'   hg38 annotation packages. `"EPICv2"` needs the Bioconductor package
+#'   `IlluminaHumanMethylationEPICv2anno.20a1.hg38`; `"EPICv1"` needs the
+#'   GitHub-only package `IlluminaHumanMethylationEPICanno.ilm10b5.hg38`
+#'   (`remotes::install_github("achilleasNP/IlluminaHumanMethylationEPICanno.ilm10b5.hg38")`).
 #' @param build Genome build of the manifest. Only `"hg38"` is supported.
 #' @return `GRanges` of width 1 with column `probe_id`.
 #' @export
@@ -83,9 +86,19 @@ read_manifest <- function(x, build = "hg38") {
   .make_probe_gr(m$CHR[ok], pos[ok], m$IlmnID[ok])
 }
 
+.pkg_available <- function(pkg) requireNamespace(pkg, quietly = TRUE)
+
+.install_hint <- function(pkg) {
+  if (identical(pkg, .builtin_manifests[["EPICv1"]])) {
+    paste0("remotes::install_github(\"achilleasNP/", pkg, "\")")
+  } else {
+    paste0("BiocManager::install(\"", pkg, "\")")
+  }
+}
+
 .manifest_builtin <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    stop("install the annotation package first: BiocManager::install('", pkg, "')", call. = FALSE)
+  if (!.pkg_available(pkg)) {
+    stop("install the annotation package first: ", .install_hint(pkg), call. = FALSE)
   }
   e <- new.env()
   utils::data("Locations", package = pkg, envir = e)

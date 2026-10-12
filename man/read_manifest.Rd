@@ -9,7 +9,10 @@ read_manifest(x, build = "hg38")
 \arguments{
 \item{x}{Path to a BED (\verb{chr, start, end, probe_id}; 1-bp, 0-based) or
 Illumina CSV manifest, or one of \code{"EPICv1"}, \code{"EPICv2"} for the
-Bioconductor hg38 annotation packages.}
+hg38 annotation packages. \code{"EPICv2"} needs the Bioconductor package
+\code{IlluminaHumanMethylationEPICv2anno.20a1.hg38}; \code{"EPICv1"} needs the
+GitHub-only package \code{IlluminaHumanMethylationEPICanno.ilm10b5.hg38}
+(\code{remotes::install_github("achilleasNP/IlluminaHumanMethylationEPICanno.ilm10b5.hg38")}).}
 
 \item{build}{Genome build of the manifest. Only \code{"hg38"} is supported.}
 }

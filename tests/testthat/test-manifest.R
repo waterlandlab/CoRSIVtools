@@ -56,3 +56,9 @@ test_that("built-in EPICv2 manifest loads hg38 coordinates", {
   expect_identical(start(gr)[i], 37692358L)
   expect_identical(metadata(gr)$manifest$source, "EPICv2")
 })
+
+test_that("missing built-in annotation packages give install instructions", {
+  local_mocked_bindings(.pkg_available = function(pkg) FALSE)
+  expect_error(read_manifest("EPICv1"), "install_github")
+  expect_error(read_manifest("EPICv2"), "BiocManager::install")
+})

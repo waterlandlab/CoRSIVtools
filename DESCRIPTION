@@ -35,7 +35,6 @@ Imports:
     withr
 Suggests:
     BiocStyle,
-    IlluminaHumanMethylationEPICanno.ilm10b5.hg38,
     IlluminaHumanMethylationEPICv2anno.20a1.hg38,
     knitr,
     rmarkdown,
