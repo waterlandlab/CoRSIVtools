@@ -57,6 +57,16 @@ test_that("built-in EPICv2 manifest loads hg38 coordinates", {
   expect_identical(metadata(gr)$manifest$source, "EPICv2")
 })
 
+test_that("built-in EPICv1 manifest loads hg38, not hg19, coordinates", {
+  skip_if_not_installed("IlluminaHumanMethylationEPICanno.ilm10b5.hg38")
+  gr <- read_manifest("EPICv1")
+  expect_gt(length(gr), 860000)
+  # cg06478886 (VTRNA2-1): hg38 chr5:136080340; the package's `Locations` gives hg19 135416029
+  i <- match("cg06478886", gr$probe_id)
+  expect_identical(as.character(GenomicRanges::seqnames(gr))[i], "chr5")
+  expect_identical(start(gr)[i], 136080340L)
+})
+
 test_that("missing built-in annotation packages give install instructions", {
   local_mocked_bindings(.pkg_available = function(pkg) FALSE)
   expect_error(read_manifest("EPICv1"), "install_github")
