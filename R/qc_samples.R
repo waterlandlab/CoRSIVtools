@@ -22,11 +22,14 @@ qc_samples <- function(se, max_cpgs = 20000) {
 
   pm <- ggplot2::ggplot(as.data.frame(tab), ggplot2::aes(stats::reorder(.data$sample, .data$frac_missing),
                                                         .data$frac_missing, colour = .data$flag)) +
-    ggplot2::geom_point(size = 2.5) +
+    ggplot2::geom_point(size = .pt(2.5)) +
     ggplot2::scale_colour_manual(values = c(`FALSE` = "#bdc3c7", `TRUE` = "#e74c3c"), name = "Flagged") +
-    ggplot2::geom_hline(yintercept = 0.05, colour = "grey", linetype = "dashed") +
-    ggplot2::labs(x = "Sample", y = "Fraction of CpGs missing", title = "Per-sample missingness") +
-    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = 7, vjust = 0.5))
+    ggplot2::geom_hline(yintercept = 0.05, colour = "grey", linetype = "dashed", linewidth = .lw(0.5)) +
+    ggplot2::labs(x = "Sample", y = "Fraction missing", title = "Missingness") +
+    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = .small_text(7), vjust = 0.5))
+  # sample names are unreadable beyond a few dozen samples at the house text size
+  if (ncol(b) > 60L) pm <- pm + ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                                               axis.ticks.x = ggplot2::element_blank())
 
   rows <- if (nrow(b) > max_cpgs) withr::with_seed(1, sort(sample.int(nrow(b), max_cpgs))) else seq_len(nrow(b))
   dens <- do.call(rbind, lapply(seq_len(ncol(b)), function(j) {
@@ -35,9 +38,9 @@ qc_samples <- function(se, max_cpgs = 20000) {
     data.frame(sample = colnames(b)[j], beta = d$x, density = d$y, flag = flag[j])
   }))
   pd <- ggplot2::ggplot(dens, ggplot2::aes(.data$beta, .data$density, group = .data$sample, colour = .data$flag)) +
-    ggplot2::geom_line(alpha = 0.6) +
+    ggplot2::geom_line(alpha = 0.6, linewidth = .lw(0.5)) +
     ggplot2::scale_colour_manual(values = c(`FALSE` = "#bdc3c7", `TRUE` = "#e74c3c"), name = "Flagged") +
-    ggplot2::labs(x = expression(beta), y = "Density", title = "Per-sample beta distributions") +
+    ggplot2::labs(x = expression(beta), y = "Density", title = "Beta distributions") +
     .theme_corsiv()
   list(table = tab, plot_missing = pm, plot_density = pd)
 }

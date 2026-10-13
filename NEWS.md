@@ -1,3 +1,15 @@
+# CoRSIVtools 0.3.0
+
+* New default plot style for every CoRSIVtools plot, in the manner of Nature Genetics figures:
+  * large, plain sans-serif text that stays legible when a panel is shrunk into a multi-panel
+    figure;
+  * point sizes and line widths doubled;
+  * legends on top;
+  * short panel titles, with details in subtitles.
+* Contributors: the style is set in `plots.R` via `.theme_corsiv()`, `.pt()` and `.lw()`.
+* `qc_samples()` hides per-sample axis labels above 60 samples.
+* Requires ggplot2 >= 3.5.0.
+
 # CoRSIVtools 0.2.2
 
 * **Bug fix:** `read_manifest("EPICv1")` returned hg19 coordinates.

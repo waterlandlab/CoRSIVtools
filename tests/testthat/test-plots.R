@@ -72,3 +72,21 @@ test_that("background plots require and honour a draw choice", {
   expect_equal(nrow(g$data), 2L)
   expect_equal(unique(g$data$draw), 1L)
 })
+
+test_that("plots use the house style: large plain text, doubled points and lines", {
+  th <- .theme_corsiv()
+  expect_identical(th$text$size, .style$base_size)
+  expect_identical(th$text$family, "sans")
+  expect_identical(th$axis.title$face, NULL)                  # plain axis titles
+  expect_identical(c(.pt(1), .lw(1)), c(2, 2))
+  g <- plot_corsiv(pl$reg, pl$dm[1], "group")
+  expect_identical(g$layers[[1]]$aes_params$linewidth, 1)     # boxplot: 2 x ggplot2's 0.5
+  expect_identical(g$layers[[2]]$aes_params$size, 4)          # points: 2 x 2
+  expect_identical(g$theme$text$size, .style$base_size)
+})
+
+test_that("Manhattan chromosome labels skip every other small chromosome only on full genomes", {
+  expect_identical(.chr_labels(c("chr1", "chr21")), c("1", "21"))
+  full <- .chr_labels(paste0("chr", c(1:22, "X")))
+  expect_identical(full[c(13, 14, 21, 22, 23)], c("13", "", "21", "", "X"))
+})

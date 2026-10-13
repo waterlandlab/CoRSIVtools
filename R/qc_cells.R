@@ -107,16 +107,16 @@ qc_cells <- function(se, cells, group, pair = NULL, pca = NULL) {
   long <- do.call(rbind, lapply(names(frac), function(cn) data.frame(cell = cn, group = g, fraction = frac[[cn]])))
   long$cell <- factor(long$cell, levels = names(frac))
   pb <- ggplot2::ggplot(long, ggplot2::aes(.data$group, .data$fraction)) +
-    ggplot2::geom_boxplot(outlier.shape = NA, fill = "white") +
-    ggplot2::geom_jitter(width = 0.15, height = 0, size = 1.5, alpha = 0.7, colour = "#3498db") +
+    ggplot2::geom_boxplot(outlier.shape = NA, fill = "white", linewidth = .lw(0.5)) +
+    ggplot2::geom_jitter(width = 0.15, height = 0, size = .pt(1.5), alpha = 0.7, colour = "#3498db") +
     ggplot2::facet_wrap(~ cell, scales = "free_y") +
-    ggplot2::labs(x = group, y = "Estimated fraction", title = "Blood cell composition by group") +
+    ggplot2::labs(x = group, y = "Estimated fraction", title = "Cell composition") +
     .theme_corsiv()
   out <- list(table = tab, plot_box = pb)
   if (!is.null(pca)) {
     fr <- frac[as.character(pca$scores$sample), , drop = FALSE]
     out$plot_pc <- .assoc_heatmap(.pc_assoc(as.data.frame(pca$scores), fr, pca$var_explained),
-                                  "Association of principal components with cell fractions")
+                                  "PCs vs cell fractions")
   }
   out
 }

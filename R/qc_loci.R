@@ -45,22 +45,23 @@ qc_spatc1l <- function(se) {
   long <- data.frame(x = factor(rep(lab, times = length(lab)), levels = lab),
                      y = factor(rep(lab, each = length(lab)), levels = rev(lab)), r = as.vector(C))
   pc <- ggplot2::ggplot(long, ggplot2::aes(.data$x, .data$y, fill = .data$r)) +
-    ggplot2::geom_tile(colour = "white") +
-    ggplot2::scale_fill_gradient2(low = "#3498db", mid = "white", high = "#e74c3c", limits = c(-1, 1),
+    ggplot2::geom_tile(colour = "white", linewidth = .lw(0.5)) +
+    ggplot2::scale_fill_gradient2(low = "#3498db", mid = "white", high = "#e74c3c", limits = c(-1, 1), guide = .colourbar(),
                                   name = "Pearson r") +
-    ggplot2::geom_vline(xintercept = length(r3) + 0.5, linewidth = 0.8) +
-    ggplot2::geom_hline(yintercept = length(r5) + 0.5, linewidth = 0.8) +
-    ggplot2::labs(x = NULL, y = NULL, title = "SPATC1L: probe-level correlation of the two end CoRSIVs",
-                  subtitle = sprintf("3' end %s (%d CpGs) | 5' end %s (%d CpGs); median between-CoRSIV r = %.2f",
+    ggplot2::geom_vline(xintercept = length(r3) + 0.5, linewidth = .lw(0.8)) +
+    ggplot2::geom_hline(yintercept = length(r5) + 0.5, linewidth = .lw(0.8)) +
+    ggplot2::labs(x = NULL, y = NULL, title = "SPATC1L end CoRSIVs",
+                  subtitle = sprintf("3' %s (%d CpGs)\n5' %s (%d CpGs)\nmedian between-CoRSIV r = %.2f",
                                      three, length(r3), five, length(r5), med_between)) +
     .theme_corsiv() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = 7, vjust = 0.5),
-                   axis.text.y = ggplot2::element_text(size = 7))
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = .small_text(7), vjust = 0.5),
+                   axis.text.y = ggplot2::element_text(size = .small_text(7)))
   ps <- ggplot2::ggplot(data.frame(m3 = m3, m5 = m5), ggplot2::aes(.data$m3, .data$m5)) +
-    ggplot2::geom_point(size = 2.5, alpha = 0.85, colour = "#3498db") +
-    ggplot2::geom_smooth(method = "lm", formula = y ~ x, se = FALSE, colour = "#333", linewidth = 0.6) +
-    ggplot2::labs(x = sprintf("Mean beta, 3' end CoRSIV (%s)", three), y = sprintf("Mean beta, 5' end CoRSIV (%s)", five),
-                  title = sprintf("SPATC1L end CoRSIVs: r = %.2f (expected < 0)", r_reg)) +
+    ggplot2::geom_point(size = .pt(2.5), alpha = 0.85, colour = "#3498db") +
+    ggplot2::geom_smooth(method = "lm", formula = y ~ x, se = FALSE, colour = "#333", linewidth = .lw(0.6)) +
+    ggplot2::labs(x = expression("Mean" ~ beta * ", 3' CoRSIV"), y = expression("Mean" ~ beta * ", 5' CoRSIV"),
+                  title = sprintf("SPATC1L: r = %.2f", r_reg),
+                  subtitle = sprintf("Expected < 0\n3' %s\n5' %s", three, five)) +
     .theme_corsiv()
   list(status = if (pass) "pass" else "flag", r_regional = r_reg, median_between = med_between,
        n_cpg = c(three_prime = length(r3), five_prime = length(r5)), corr = C, plot_corr = pc, plot_scatter = ps)
@@ -119,22 +120,22 @@ qc_vtrna2 <- function(se) {
   tab <- DataFrame(sample = colnames(b), mean_beta = unname(m), mode = mode)
 
   ph <- ggplot2::ggplot(as.data.frame(tab[ok, ]), ggplot2::aes(.data$mean_beta, fill = .data$mode)) +
-    ggplot2::geom_histogram(binwidth = 0.02, boundary = 0, colour = "white") +
+    ggplot2::geom_histogram(binwidth = 0.02, boundary = 0, colour = "white", linewidth = .lw(0.5)) +
     ggplot2::scale_fill_manual(values = c(low = "#3498db", high = "#e74c3c")) +
     ggplot2::coord_cartesian(xlim = c(0, 1)) +
-    ggplot2::labs(x = sprintf("Mean beta at VTRNA2-1 CoRSIV (%s, %d CpGs)", reg, length(rows)), y = "Samples",
-                  title = sprintf("VTRNA2-1: %d low, %d high (component means %.2f / %.2f)",
-                                  sum(mode == "low", na.rm = TRUE), sum(mode == "high", na.rm = TRUE),
-                                  min(g$mu), max(g$mu))) +
+    ggplot2::labs(x = expression("Mean" ~ beta * ", VTRNA2-1 CoRSIV"), y = "Samples", title = "VTRNA2-1",
+                  subtitle = sprintf("%d low, %d high (means %.2f / %.2f)\n%s, %d CpGs",
+                                     sum(mode == "low", na.rm = TRUE), sum(mode == "high", na.rm = TRUE),
+                                     min(g$mu), max(g$mu), reg, length(rows))) +
     .theme_corsiv()
   long <- data.frame(cpg = factor(rep(start(rowRanges(se))[rows], times = ncol(b))),
                      beta = as.vector(b[rows, , drop = FALSE]), mode = rep(mode, each = length(rows)))
   long <- long[!is.na(long$beta) & !is.na(long$mode), ]
   pp <- ggplot2::ggplot(long, ggplot2::aes(.data$cpg, .data$beta, colour = .data$mode)) +
-    ggplot2::geom_jitter(width = 0.2, height = 0, size = 1.2, alpha = 0.7) +
+    ggplot2::geom_jitter(width = 0.2, height = 0, size = .pt(1.2), alpha = 0.7) +
     ggplot2::scale_colour_manual(values = c(low = "#3498db", high = "#e74c3c")) +
-    ggplot2::labs(x = "CpG position (chr5)", y = expression(beta), title = "VTRNA2-1: probe-level methylation by sample mode") +
-    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = 7, vjust = 0.5))
+    ggplot2::labs(x = "CpG position (chr5)", y = expression(beta), title = "VTRNA2-1 CpGs by mode") +
+    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, size = .small_text(7), vjust = 0.5))
   list(status = if (pass) "pass" else "flag", n_low = sum(mode == "low", na.rm = TRUE),
        n_high = sum(mode == "high", na.rm = TRUE), mu = sort(g$mu), delta_bic = delta_bic,
        table = tab, plot_hist = ph, plot_probes = pp)

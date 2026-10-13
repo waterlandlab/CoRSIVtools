@@ -25,7 +25,7 @@ suppressPackageStartupMessages({
   library(CoRSIVtools)
   library(SummarizedExperiment)
 })
-save_fig <- function(p, name, width = 9, height = 5.5) {
+save_fig <- function(p, name, width = 5.5, height = 5.5) {   # small panels: house style uses large text
   ggplot2::ggsave(file.path(fig_dir, paste0(name, ".png")), p, width = width, height = height,
                   dpi = FIG_DPI, bg = "white")
 }
@@ -50,15 +50,15 @@ out$qc_cells <- qc$results$cells$table
 out$qc_pca <- list(n_cpgs_used = qc$results$pca$n_cpgs_used, var_explained = qc$results$pca$var_explained)
 save_fig(qc$results$samples$plot_density, "qc_density")
 save_fig(qc$results$pca$plots$timepoint$pc12, "qc_pca_timepoint")
-save_fig(qc$results$batch$plot, "qc_batch", height = 4.5)
-save_fig(qc$results$spatc1l$plot_scatter, "qc_spatc1l", width = 7, height = 6)
+save_fig(qc$results$batch$plot, "qc_batch", width = 10, height = 6)
+save_fig(qc$results$spatc1l$plot_scatter, "qc_spatc1l")
 save_fig(qc$results$vtrna2$plot_hist, "qc_vtrna2")
 
 # cell composition is checked within each timepoint: birth vs adult blood differ by design
 out$cells_by_timepoint <- lapply(split(seq_len(ncol(se)), se$timepoint), function(i)
   qc_cells(se[, i], cells = CELL_COVS, group = "conception")$table)
 save_fig(qc_cells(se[, se$timepoint == "birth"], cells = colnames(cells), group = "conception")$plot_box,
-         "qc_cells_birth", height = 6)
+         "qc_cells_birth", width = 10, height = 8)
 
 # qc_samples() also flags samples > 3 MADs above the median missingness. With very low median
 # missingness that relative rule flags samples missing well under 1% of CpGs, so exclusion here
@@ -108,10 +108,10 @@ for (tp in levels(se$timepoint)) {
                                     "P", "FDR")],
                     provenance = metadata(res))
   save_fig(plot_manhattan(res), paste0(tp, "_manhattan"), width = 11, height = 5)
-  save_fig(plot_volcano(res), paste0(tp, "_volcano"), width = 8, height = 6)
-  save_fig(plot_background(cmp, "enrichment"), paste0(tp, "_bg_enrichment"), width = 8, height = 5)
-  save_fig(plot_background(cmp, "variability"), paste0(tp, "_bg_variability"), width = 8, height = 5)
-  save_fig(plot_corsiv(r, tg$region_id[1], "conception"), paste0(tp, "_top_corsiv"), width = 6, height = 5.5)
+  save_fig(plot_volcano(res), paste0(tp, "_volcano"))
+  save_fig(plot_background(cmp, "enrichment"), paste0(tp, "_bg_enrichment"))
+  save_fig(plot_background(cmp, "variability"), paste0(tp, "_bg_variability"))
+  save_fig(plot_corsiv(r, tg$region_id[1], "conception"), paste0(tp, "_top_corsiv"))
 }
 
 out$session <- printed(utils::sessionInfo())

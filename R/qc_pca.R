@@ -45,10 +45,11 @@ qc_pca <- function(se, vars = character(), n_top = 10000, features = c("all", "c
     if (j > k) return(NULL)
     xi <- paste0("PC", i); yj <- paste0("PC", j)
     g <- ggplot2::ggplot(scores, ggplot2::aes(.data[[xi]], .data[[yj]], colour = .data[[v]])) +
-      ggplot2::geom_point(size = 2.5, alpha = 0.85) +
+      ggplot2::geom_point(size = .pt(2.5), alpha = 0.85) +
       ggplot2::labs(x = sprintf("%s (%.1f%%)", xi, 100 * ve[i]), y = sprintf("%s (%.1f%%)", yj, 100 * ve[j]),
                     title = sprintf("PCA coloured by %s", v)) +
       .theme_corsiv()
+    if (is.numeric(scores[[v]])) g <- g + ggplot2::guides(colour = .colourbar())
     if (!is.numeric(scores[[v]]) && length(unique(scores[[v]])) > 12) g <- g + ggplot2::theme(legend.position = "none")
     g
   }
@@ -77,5 +78,5 @@ qc_batch <- function(pca, se, vars) {
   .check_vars(se, vars)
   cd <- as.data.frame(colData(se))[as.character(pca$scores$sample), vars, drop = FALSE]
   tab <- .pc_assoc(as.data.frame(pca$scores), cd, pca$var_explained)
-  list(table = tab, plot = .assoc_heatmap(tab, "Association of principal components with sample variables"))
+  list(table = tab, plot = .assoc_heatmap(tab, "PCs vs sample variables"))
 }
