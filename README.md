@@ -53,8 +53,13 @@ cmp  <- compare_to_background(res)
 plot_manhattan(res); plot_volcano(res); plot_background(cmp)
 ```
 
-For a runnable example on simulated data, see
-`vignette("CoRSIVtools", package = "CoRSIVtools")`.
+The [workflow vignette](https://waterlandlab.github.io/CoRSIVtools/articles/CoRSIVtools.html)
+(`vignette("CoRSIVtools", package = "CoRSIVtools")`) walks through a full
+analysis of a public EPIC dataset, GSE131433: ART vs natural conception, at
+birth and in adulthood. It covers GEO cleaning, QC, matched backgrounds and
+interpretation. The scripts that produce it are in `inst/scripts/`
+(`gse131433_prepare.R`, `gse131433_analysis.R`). For a small example that runs
+in seconds, use `simulate_corsiv_data()`.
 
 **Seeds:** draw *r* of the matched background uses seed `seed + r`. For two
 analyses to have independent background draws, their seeds must differ by at

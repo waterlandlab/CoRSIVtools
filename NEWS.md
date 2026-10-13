@@ -1,3 +1,15 @@
+# CoRSIVtools 0.2.2
+
+* **Bug fix:** `read_manifest("EPICv1")` returned hg19 coordinates.
+  `IlluminaHumanMethylationEPICanno.ilm10b5.hg38` stores Illumina's hg19 `MAPINFO` in `Locations`
+  despite its name. hg38 positions are now read from its `Other` table
+  (`CHR_hg38`, `Start_hg38 + 1`); 99.9% of sampled cg probes land on a CpG in hg38. EPICv1 results
+  from earlier versions overlapped hg19 probe positions with hg38 CoRSIVs and should be re-run.
+  `"EPICv2"` was not affected.
+* The workflow vignette now analyses a real public dataset, GSE131433 (ART vs natural conception,
+  at birth and in adulthood), from precomputed results. Reproduce it with
+  `inst/scripts/gse131433_prepare.R` and `inst/scripts/gse131433_analysis.R`.
+
 # CoRSIVtools 0.2.1
 
 * `qc_pca()` uses autosomal CpGs only by default (`autosomes = TRUE`). In mixed-sex cohorts,

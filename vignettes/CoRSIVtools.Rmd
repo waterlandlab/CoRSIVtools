@@ -1,5 +1,6 @@
 ---
 title: "CoRSIV-focused differential methylation with CoRSIVtools"
+subtitle: "Worked example: ART conception in GSE131433, at birth and in adulthood"
 output: BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{CoRSIVtools}
@@ -7,94 +8,393 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, message = FALSE}
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(comment = "#>", collapse = TRUE)
 library(CoRSIVtools)
+pre <- readRDS("gse131433/gse131433_results.rds")
+fig <- function(name) knitr::include_graphics(file.path("gse131433", "figures", paste0(name, ".png")))
+show_df <- function(x, digits = 3) {
+  x <- as.data.frame(x)
+  num <- vapply(x, is.numeric, logical(1))
+  x[num] <- lapply(x[num], signif, digits = digits)
+  knitr::kable(x, row.names = FALSE)
+}
+n_fmt <- function(x) format(x, big.mark = ",")
 ```
+
+This vignette walks through a complete CoRSIV analysis of a public EPIC dataset,
+**GSE131433**. The CHART cohort (Novakovic et al. 2019) profiled blood from
+people conceived by assisted reproductive technology (ART) and from naturally
+conceived controls. Each person was sampled twice: at birth from a Guthrie
+(heel-prick) blood spot, and in adulthood from whole blood. We ask whether
+methylation at CoRSIVs differs by mode of conception at each timepoint.
+
+The input files are several GB, so the code below is shown but not run when the
+vignette is built. Its outputs (tables and figures) were precomputed by two
+scripts shipped with the package; the analysis was run on `r pre$run_date`.
+
+```{r scripts, eval = FALSE}
+system.file("scripts", "gse131433_prepare.R", package = "CoRSIVtools")   # GEO files -> annotated SE
+system.file("scripts", "gse131433_analysis.R", package = "CoRSIVtools")  # SE -> results in this vignette
+```
+
+For a small example that runs in seconds, use `simulate_corsiv_data()`. It is
+used in every function's help-page example.
+
+# Data
 
 ## Inputs
 
-Real analyses supply a normalised beta matrix, a metadata table with one row per
-array sample, and an hg38 probe manifest (BED or Illumina CSV, or `"EPICv1"` /
-`"EPICv2"`). For EPIC-Xtra, request the manifest from the vendor. Here we use
-simulated data on real chr21 sequence.
+CoRSIVtools needs three inputs:
 
-```{r data}
-sim <- simulate_corsiv_data(n_samples = 20, n_corsivs = 40, n_dm = 10)
-se  <- sim$se                                   # from_matrix(betas, meta, "sample_id")
-se  <- annotate_probes(se, sim$manifest)        # read_manifest("path/to/manifest.bed")
+- a normalised beta matrix (probes × samples);
+- a sample metadata table;
+- an hg38 probe manifest: a BED or Illumina CSV, or `"EPICv1"` / `"EPICv2"`.
+
+From GEO we downloaded two files and never modified them:
+
+- `GSE131433_series_matrix.txt`, the sample metadata;
+- the supplementary `BorisNovakovicCHART_matrix_processed.csv`, with
+  submitter-normalised (SWAN) betas and detection P values for
+  `r n_fmt(pre$prepare$n_raw_probes)` probes in 440 arrays.
+
+## Cleaning the GEO files
+
+The series matrix stores metadata as tab-separated rows of `key: value`
+strings. We parse it into one row per array, with these columns:
+
+- `timepoint`, `conception` (reference level `natural`) and `sex`;
+- the Sentrix `slide` and `position`, taken from the IDAT file names, plus
+  `array_row`, the row part of the position.
+
+```{r parse, eval = FALSE}
+sm    <- readLines("GSE131433_series_matrix.txt")
+field <- function(tag) lapply(grep(paste0("^!", tag, "\t"), sm, value = TRUE),
+                              function(x) scan(text = x, what = "", sep = "\t", quiet = TRUE)[-1])
+chars <- field("Sample_characteristics_ch1")            # "gender: F", "art status: ART", ...
+ch    <- do.call(cbind, lapply(chars, function(v) sub("^[^:]+: ", "", v)))
+colnames(ch) <- vapply(chars, function(v) unique(sub(":.*$", "", v)), "")
+idat  <- field("Sample_supplementary_file")[[1]]        # .../GSM..._<slide>_<RxxCxx>_Grn.idat.gz
+sx    <- regmatches(idat, regexec("_([0-9]+)_(R[0-9]+C[0-9]+)_Grn\\.idat", idat))
+meta  <- data.frame(
+  sample_id  = field("Sample_title")[[1]],               # matches the beta column names
+  donor      = field("Sample_source_name_ch1")[[1]],
+  timepoint  = factor(ifelse(ch[, "time of collection"] == "birth", "birth", "adult"), c("birth", "adult")),
+  conception = factor(ifelse(ch[, "art status"] == "ART", "ART", "natural"), c("natural", "ART")),
+  sex        = factor(ch[, "gender"], c("F", "M")),
+  slide      = vapply(sx, `[`, "", 2),
+  position   = vapply(sx, `[`, "", 3))
+meta$array_row <- sub("C[0-9]+$", "", meta$position)
 ```
 
-## Quality control
+The processed CSV holds each sample's beta column next to its
+`<sample>_Detection_Pval` column. The cleaning steps are:
 
-Run the QC suite before testing. It checks:
+1. Read both column sets.
+2. Mask betas with detection P > 0.01.
+3. Drop probes masked in more than 5% of samples
+   (`r n_fmt(pre$prepare$n_probes_failed)` probes).
+4. Keep `r n_fmt(pre$prepare$n_probes_kept)` probes.
 
-- per-sample missingness and beta distributions;
-- PCA, coloured by metadata, with each PC's association with batch and
-  biological variables;
-- blood cell composition by group;
-- two known CoRSIV behaviours:
-  - the CoRSIVs at the two ends of *SPATC1L* should be anti-correlated;
-  - the *VTRNA2-1* CoRSIV should be bimodal.
+The prepare script stops if the sample titles do not match the beta columns
+one-to-one. It also stops if the timepoint or conception encoded in a title
+disagrees with the characteristics fields.
 
-The simulated data cover only part of chr21, so the two CoRSIV-biology
-checks are skipped here. On real arrays they run automatically.
+```{r read, eval = FALSE}
+dt    <- data.table::fread("BorisNovakovicCHART_matrix_processed.csv",
+                           select = c("ID_REF", meta$sample_id, paste0(meta$sample_id, "_Detection_Pval")))
+betas <- as.matrix(dt[, meta$sample_id, with = FALSE]); rownames(betas) <- dt$ID_REF
+detp  <- as.matrix(dt[, paste0(meta$sample_id, "_Detection_Pval"), with = FALSE])
+betas[detp > 0.01] <- NA
+betas <- betas[rowMeans(detp > 0.01) <= 0.05, ]
+```
 
-```{r qc, fig.width = 9, fig.height = 5}
-qc <- qc_report(se, vars = c("group", "age"), group = "group", n_top = 500, estimate_cells = FALSE)
+## Building the SummarizedExperiment
+
+`from_matrix()` checks that the betas and the metadata match one-to-one.
+`annotate_probes()` attaches hg38 coordinates and averages replicate probes at
+the same CpG.
+
+```{r se, eval = FALSE}
+se <- from_matrix(betas, meta, sample_col = "sample_id")
+se <- annotate_probes(se, read_manifest("EPICv1"))   # needs IlluminaHumanMethylationEPICanno.ilm10b5.hg38
+se
+```
+
+```{r se-out, echo = FALSE}
+cat(pre$se, "\n")
+```
+
+```{r design-out, echo = FALSE}
+show_df(stats::xtabs(Freq ~ timepoint + conception, pre$design_table))
+```
+
+# Quality control
+
+We estimate blood cell fractions with EpiDISH, using the 7-cell-type
+`centDHSbloodDMC` reference. `r pre$cells_meta$n_used` of its
+`r pre$cells_meta$n_ref` reference CpGs are usable on this array. The
+reference was built from adult blood and has no nucleated red blood cells, so
+the newborn estimates are approximate. We then run the full QC suite. Slide and
+array row are the technical variables.
+
+```{r qc, eval = FALSE}
+cells <- estimate_cell_fractions(se, ref = "centDHSbloodDMC")
+for (cn in colnames(cells)) colData(se)[[cn]] <- cells[[cn]]
+qc <- qc_report(se, vars = c("timepoint", "conception", "sex", "slide", "array_row"),
+                technical = c("slide", "array_row"), cells = colnames(cells), group = "conception")
 qc$summary
-qc$results$pca$plots$group$pc12
-qc$results$batch$plot
 ```
 
-## Target CoRSIVs and a matched background
+```{r qc-out, echo = FALSE}
+show_df(pre$qc_summary)
+```
 
-```{r sets}
-sets <- define_sets(se, corsivs = sim$corsivs, background = "matched", n_draws = 20, seed = 1)
+## Samples
+
+```{r qc-density, echo = FALSE, out.width = "85%"}
+fig("qc_density")
+```
+
+The median sample is missing
+`r signif(100 * pre$sample_missing$median_frac_missing, 2)`% of CpGs; the worst
+is missing `r signif(100 * pre$sample_missing$max_frac_missing, 2)`%. `qc_samples()`
+flags a sample on two rules: more than 5% of CpGs missing, or missingness more
+than 3 MADs above the median. Here only the relative rule fires: it flags
+`r pre$sample_missing$n_flag_relative` samples, mostly the dried blood spots,
+which carry slightly more masked values than whole blood. The median is so
+close to zero that "3 MADs above it" still means well under 3% missing, so no
+samples were excluded. Inspect `qc$results$samples$table` before deciding on
+exclusions in your own data.
+
+## Batch and biology
+
+PC1 explains `r round(100 * pre$qc_pca$var_explained[1])`% of the variance and
+separates newborn blood spots from adult whole blood:
+
+```{r qc-pca, echo = FALSE, out.width = "85%"}
+fig("qc_pca_timepoint")
+```
+
+```{r qc-batch, echo = FALSE, out.width = "85%"}
+fig("qc_batch")
+```
+
+The batch check is flagged because array row is associated with PC1. Most of
+that is the timepoint: newborn and adult samples sit on different rows of the
+chips. The more important question is whether a technical variable is
+confounded with the *comparison* within each timepoint. Array row is:
+
+```{r row-conf, eval = FALSE}
+table(se$array_row[se$timepoint == "birth"], se$conception[se$timepoint == "birth"])
+```
+
+```{r row-conf-out, echo = FALSE}
+pre$row_by_conception$birth
+```
+
+Most naturally conceived newborns sit on rows R05 to R07. Array row is
+confounded with conception at both timepoints (simulated Fisher's exact
+P < 10^-4^). Array position effects on Infinium chips are well documented, so
+`array_row` goes into the model below. We first fitted the model without it.
+24% (birth) and 37% (adulthood) of matched *background* regions then reached
+P < 0.05 for ART, against 5% expected under the null. That pattern means a
+technical artefact, not biology. With `array_row` in the model, the figure drops
+to about 3%.
+
+Cell composition does not differ by conception at either timepoint:
+
+```{r qc-cells-out, echo = FALSE}
+show_df(rbind(cbind(timepoint = "birth", pre$cells_by_timepoint$birth),
+              cbind(timepoint = "adult", pre$cells_by_timepoint$adult)))
+```
+
+## CoRSIV biology checks
+
+These two checks need no phenotype. They confirm that the probes map to the
+right CoRSIVs and that the data carry real interindividual variation.
+
+- The CoRSIVs at the two ends of *SPATC1L* should be anti-correlated.
+- The *VTRNA2-1* CoRSIV should be bimodal.
+
+Both pass. (They are also a sensitive test of genome build: with hg19 probe
+coordinates, neither locus has any CpGs.)
+
+```{r qc-loci, echo = FALSE, out.width = "48%", fig.show = "hold"}
+fig("qc_spatc1l")
+fig("qc_vtrna2")
+```
+
+# Target CoRSIVs and a matched background
+
+`define_sets()` keeps CoRSIVs with at least 3 CpGs on the array. For each one,
+it draws matched random control regions with the same width, probe count,
+chromosome type and CpG density, 100 times. Sets depend only on array
+coverage, so both timepoints share them. `summarise_regions()` averages the
+CpGs in each region per sample.
+
+```{r sets, eval = FALSE}
+sets <- define_sets(se, background = "matched", n_draws = 100, seed = 1)
 sets
 coverage_report(sets)
+reg  <- summarise_regions(se, sets)
 ```
 
-On this small 4-Mb simulation a few CpG-island-dense CoRSIVs have no comparable
-control locus, so they are left unmatched and the warning above is expected;
-`matchDiagnostics(sets)` reports how many targets were matched in each draw.
-
-`background = "array"` uses every CpG outside the CoRSIVs (CpG level only);
-a `GRanges` uses your own control regions.
-
-## CoRSIV-level test
-
-```{r test}
-reg <- summarise_regions(se, sets)
-res <- test_dm(reg, design = ~ group + age, coef = "groupB")
-head(res[res$set == "target", ][order(res$P[res$set == "target"]), ])
+```{r sets-out, echo = FALSE}
+cat(pre$sets, "\n")
+show_df(pre$coverage)
 ```
 
-## Compare with the background
+EPIC v1 reaches `r n_fmt(pre$coverage$n_ge1[1])` of the
+`r n_fmt(pre$coverage$n_regions[1])` autosomal CoRSIVs, but only
+`r pre$coverage$n_ge3[1]` have three or more CpGs. CoRSIVs are largely
+invisible to standard arrays, which is why the coverage report matters. Per
+draw, `r round(median(pre$match$n_matched))` targets (median) were matched.
 
-```{r compare}
-cmp <- compare_to_background(res)
-cmp$enrichment
-cmp$variability
+# CoRSIV-level test, at birth and in adulthood
+
+We fit `test_dm()` separately in each timepoint. It runs limma on the M-values
+of the CoRSIV means, with the model below. Neutrophils and eosinophils are the
+implicit reference among the cell fractions.
+
+```{r test, eval = FALSE}
+design <- ~ conception + sex + array_row + B + NK + CD4T + CD8T + Mono
+res_birth <- test_dm(reg[, reg$timepoint == "birth"], design, coef = "conceptionART")
+res_adult <- test_dm(reg[, reg$timepoint == "adult"], design, coef = "conceptionART")
 ```
 
-## Plots
-
-```{r plots, fig.width = 9, fig.height = 5}
-plot_volcano(res)
-plot_background(cmp, "enrichment")
-plot_corsiv(reg, sim$dm_ids[1], "group")
+```{r test-out, echo = FALSE, results = "asis"}
+for (tp in c("birth", "adult")) {
+  x <- pre[[tp]]
+  cat(sprintf("\n**%s** (n = %d): %d of %d CoRSIVs at FDR < 0.05. Top 10:\n\n",
+              tools::toTitleCase(tp), x$n, x$n_fdr, x$n_target))
+  print(show_df(x$top))
+}
 ```
 
-## Exporting for bedtools
-
-```{r bed}
-f <- tempfile(fileext = ".bed")
-write_bed(res[res$set == "target", ], f)
-readLines(f, 3)
+```{r concord, echo = FALSE}
+m <- merge(pre$birth$target, pre$adult$target, by = "region_id", suffixes = c("_birth", "_adult"))
+r_db <- cor(m$delta_beta_birth, m$delta_beta_adult)
+rk <- function(x, id) rank(x$P)[match(id, x$region_id)]
 ```
 
-## Session info
+No CoRSIV passes FDR < 0.05 at birth. In adulthood,
+`r pre$adult$n_fdr` do. Effects are small: the median |Δβ| across CoRSIVs is
+`r signif(100 * pre$adult$distributions$target_abs_delta_beta[3], 2)` percentage
+points in adulthood, and the largest is
+`r round(100 * max(abs(pre$adult$target$delta_beta)), 1)` points. The ART
+effect estimates agree well between timepoints (Pearson r = `r round(r_db, 2)`
+for Δβ across all `r nrow(m)` CoRSIVs). chr6:27217501-27218800 ranks
+`r rk(pre$birth$target, "chr6:27217501-27218800")` at birth and
+`r rk(pre$adult$target, "chr6:27217501-27218800")` in adulthood;
+chr14:105363801-105364800 ranks
+`r rk(pre$birth$target, "chr14:105363801-105364800")` and
+`r rk(pre$adult$target, "chr14:105363801-105364800")`. Newborns and adults are
+largely the same people, so this agreement is not independent replication. It
+does suggest a stable difference rather than noise.
 
-```{r}
+```{r volcano, echo = FALSE, out.width = "48%", fig.show = "hold"}
+fig("birth_volcano")
+fig("adult_volcano")
+```
+
+```{r manhattan, echo = FALSE, out.width = "100%"}
+fig("adult_manhattan")
+```
+
+`plot_corsiv()` shows the per-person data behind a result. Here is the top
+CoRSIV in adulthood:
+
+```{r top-corsiv, eval = FALSE}
+plot_corsiv(reg[, reg$timepoint == "adult"], res_adult$region_id[which.min(res_adult$P)], "conception")
+```
+
+```{r top-corsiv-out, echo = FALSE, out.width = "55%"}
+fig("adult_top_corsiv")
+```
+
+# Compare with the background
+
+`compare_to_background()` asks two questions:
+
+- Are CoRSIVs more often associated with ART than comparable random regions?
+  This is the enrichment.
+- Do CoRSIVs vary more between people? This is the variability.
+
+```{r compare, eval = FALSE}
+cmp_birth <- compare_to_background(res_birth)
+cmp_adult <- compare_to_background(res_adult)
+cmp_adult$enrichment
+cmp_adult$variability
+```
+
+```{r compare-out, echo = FALSE}
+enr <- rbind(cbind(timepoint = "birth", pre$birth$enrichment), cbind(timepoint = "adult", pre$adult$enrichment))
+show_df(enr[, c("timepoint", "target_n", "target_frac_sig", "bg_mean_frac_sig", "empirical_p",
+                "fisher_or", "target_n_fdr", "bg_mean_n_fdr")])
+vb <- rbind(cbind(timepoint = "birth", pre$birth$variability), cbind(timepoint = "adult", pre$adult$variability))
+show_df(vb)
+```
+
+Two background results stand out. First, at both timepoints CoRSIVs are about
+three times more likely than matched control regions to reach P < 0.05 for ART:
+`r round(100 * pre$birth$enrichment$target_frac_sig, 1)`% vs
+`r round(100 * pre$birth$enrichment$bg_mean_frac_sig, 1)`% at birth, and
+`r round(100 * pre$adult$enrichment$target_frac_sig, 1)`% vs
+`r round(100 * pre$adult$enrichment$bg_mean_frac_sig, 1)`% in adulthood. No
+background draw reached the CoRSIV fraction (empirical P =
+`r signif(pre$adult$enrichment$empirical_p, 2)`, the minimum possible with 100
+draws). Second, CoRSIVs are far more variable between people than matched
+regions: median SD of beta `r signif(pre$adult$variability$target_median_sd, 2)`
+vs `r signif(pre$adult$variability$bg_mean_median_sd, 2)` in adults. This is the
+defining property of CoRSIVs, reproduced here in an independent cohort.
+
+These results come from only `r pre$adult$n_target` CoRSIVs, with small effect
+sizes. Treat them as hypothesis-generating. CoRSIV methylation is partly
+genetically influenced, so a group difference there can also reflect genetic
+or ancestry differences between the groups, not only the exposure. Matched
+background regions do not control for this. Following up would need better
+CoRSIV coverage than EPIC provides, for example targeted bisulfite sequencing.
+
+```{r bg-plots, echo = FALSE, out.width = "48%", fig.show = "hold"}
+fig("adult_bg_enrichment")
+fig("adult_bg_variability")
+```
+
+# Exporting for bedtools
+
+`write_bed()` writes standard 0-based BED files:
+
+```{r bed, eval = FALSE}
+write_bed(res_adult[res_adult$set == "target", ], "gse131433_adult_corsivs.bed")
+```
+
+# Caveats for this dataset
+
+- Adult age is not in the GEO record, so it is not adjusted for.
+- The ART group pools fresh-embryo, frozen-embryo and GIFT conceptions.
+- Newborn and adult samples differ in tissue (dried blood spot vs whole blood)
+  and were processed on different chip rows. Compare results across
+  timepoints, not methylation levels.
+- Most donors have arrays at both timepoints. A paired analysis
+  (`design = ~ donor + timepoint`) is possible but not shown here.
+
+# Reproducibility
+
+Provenance of the adult fit, as stored in `metadata(res_adult)`:
+
+```{r prov, echo = FALSE}
+str(pre$adult$provenance, give.attr = FALSE, max.level = 1)
+```
+
+Session used to compute the results:
+
+```{r session-pre, echo = FALSE}
+cat(pre$session, "\n")
+```
+
+Session used to build this vignette:
+
+```{r session}
 sessionInfo()
 ```
