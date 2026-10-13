@@ -50,14 +50,14 @@
   pcs <- levels(tab$pc)
   ve <- tab$var_explained[match(pcs, as.character(tab$pc))]
   ggplot2::ggplot(tab, ggplot2::aes(.data$pc, .data$variable, fill = .data$neglog10p)) +
-    ggplot2::geom_tile(colour = "white") +
-    ggplot2::geom_text(ggplot2::aes(label = .data$label), size = 4, colour = "#333") +
-    ggplot2::scale_fill_gradient(low = "white", high = "#e74c3c", na.value = "grey90",
+    ggplot2::geom_tile(colour = "white", linewidth = .lw(0.5)) +
+    ggplot2::geom_text(ggplot2::aes(label = .data$label), size = .small_text(4), colour = "#333") +
+    ggplot2::scale_fill_gradient(low = "white", high = "#e74c3c", na.value = "grey90", guide = .colourbar(),
                                  name = expression(-log[10](P))) +
     ggplot2::scale_x_discrete(labels = sprintf("%s\n%.1f%%", pcs, 100 * ve)) +
     ggplot2::labs(x = NULL, y = NULL, title = title,
                   subtitle = "* P < 0.05, ** P < 0.01, *** P < 0.001; % = variance explained") +
-    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10))
+    .theme_corsiv() + ggplot2::theme(axis.text.x = ggplot2::element_text(size = .small_text(7)))
 }
 
 # Rows of an annotated SE inside a "chr:start-end" region (1-based, inclusive).

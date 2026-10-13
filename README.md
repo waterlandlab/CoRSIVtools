@@ -117,7 +117,9 @@ remotes::install_github("waterlandlab/CoRSIVtools")   # or devtools::install("pa
   large downloads, many permutations.
 - Functions take and return a `SummarizedExperiment` or a plain `data.frame`,
   like the existing ones.
-- Plots return ggplot objects in the house palette (see `plots.R`).
+- Plots return ggplot objects in the house style (see `plots.R`): add `.theme_corsiv()`,
+  and wrap every point size in `.pt()` and every line width in `.lw()`. Use the house palette
+  `.col` and short panel titles, with details in the subtitle.
 - Never commit participant-level data, including in tests or `inst/extdata`.
 - For a larger feature, write a short design note in `docs/` before coding.
 
