@@ -101,6 +101,15 @@ read_manifest <- function(x, build = "hg38") {
     stop("install the annotation package first: ", .install_hint(pkg), call. = FALSE)
   }
   e <- new.env()
+  if (identical(pkg, .builtin_manifests[["EPICv1"]])) {
+    # This package's `Locations` holds Illumina's hg19 MAPINFO despite the ".hg38" name; the hg38
+    # coordinates are in `Other` as 0-based starts (CHR_hg38, Start_hg38), so position = Start_hg38 + 1.
+    utils::data("Other", package = pkg, envir = e)
+    O <- e$Other
+    pos <- suppressWarnings(as.integer(O$Start_hg38)) + 1L
+    ok <- !is.na(O$CHR_hg38) & nzchar(O$CHR_hg38) & !is.na(pos)
+    return(.make_probe_gr(O$CHR_hg38[ok], pos[ok], rownames(O)[ok]))
+  }
   utils::data("Locations", package = pkg, envir = e)
   L <- e$Locations
   ok <- !is.na(L$chr) & !is.na(L$pos)
